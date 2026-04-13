@@ -1,0 +1,3113 @@
+{
+  "id": "20260413_101722",
+  "started_at": "2026-04-13T10:17:22",
+  "player_color": "white",
+  "bot_color": "black",
+  "bot_mode": "legal",
+  "moves": [
+    {
+      "ply": 1,
+      "actor": "Human",
+      "color": "white",
+      "san": "f4",
+      "uci": "f2f4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 2,
+      "actor": "AI",
+      "color": "black",
+      "san": "d5",
+      "uci": "d7d5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0705,
+      "estimated_total_score": 2.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 3,
+      "actor": "Human",
+      "color": "white",
+      "san": "d4",
+      "uci": "d2d4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 4,
+      "actor": "AI",
+      "color": "black",
+      "san": "Qd6",
+      "uci": "d8d6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0483,
+      "estimated_total_score": -14.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 5,
+      "actor": "Human",
+      "color": "white",
+      "san": "e3",
+      "uci": "e2e3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 6,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nc6",
+      "uci": "b8c6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0414,
+      "estimated_total_score": 16.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 7,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nc3",
+      "uci": "b1c3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 8,
+      "actor": "AI",
+      "color": "black",
+      "san": "Qb4",
+      "uci": "d6b4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0526,
+      "estimated_total_score": -35.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 9,
+      "actor": "Human",
+      "color": "white",
+      "san": "a3",
+      "uci": "a2a3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 10,
+      "actor": "AI",
+      "color": "black",
+      "san": "Qa5",
+      "uci": "b4a5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3269,
+      "estimated_total_score": -63.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 11,
+      "actor": "Human",
+      "color": "white",
+      "san": "Bd2",
+      "uci": "c1d2",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 12,
+      "actor": "AI",
+      "color": "black",
+      "san": "e5",
+      "uci": "e7e5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0558,
+      "estimated_total_score": -122.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 13,
+      "actor": "Human",
+      "color": "white",
+      "san": "Ne4",
+      "uci": "c3e4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 14,
+      "actor": "AI",
+      "color": "black",
+      "san": "Qa4",
+      "uci": "a5a4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.2331,
+      "estimated_total_score": -151.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 15,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nc5",
+      "uci": "e4c5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 16,
+      "actor": "AI",
+      "color": "black",
+      "san": "Bxc5",
+      "uci": "f8c5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.6284,
+      "estimated_total_score": 112.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 17,
+      "actor": "Human",
+      "color": "white",
+      "san": "dxc5",
+      "uci": "d4c5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 18,
+      "actor": "AI",
+      "color": "black",
+      "san": "exf4",
+      "uci": "e5f4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0581,
+      "estimated_total_score": 74.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 19,
+      "actor": "Human",
+      "color": "white",
+      "san": "exf4",
+      "uci": "e3f4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 20,
+      "actor": "AI",
+      "color": "black",
+      "san": "Qe4+",
+      "uci": "a4e4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0493,
+      "estimated_total_score": 88.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 21,
+      "actor": "Human",
+      "color": "white",
+      "san": "Qe2",
+      "uci": "d1e2",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 22,
+      "actor": "AI",
+      "color": "black",
+      "san": "Qxe2+",
+      "uci": "e4e2",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.7077,
+      "estimated_total_score": 10.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 23,
+      "actor": "Human",
+      "color": "white",
+      "san": "Bxe2",
+      "uci": "f1e2",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 24,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nf6",
+      "uci": "g8f6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0505,
+      "estimated_total_score": 16.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 25,
+      "actor": "Human",
+      "color": "white",
+      "san": "O-O-O",
+      "uci": "e1c1",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 26,
+      "actor": "AI",
+      "color": "black",
+      "san": "Ne4",
+      "uci": "f6e4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0451,
+      "estimated_total_score": 80.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 27,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nf3",
+      "uci": "g1f3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 28,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nxc5",
+      "uci": "e4c5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0495,
+      "estimated_total_score": 115.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 29,
+      "actor": "Human",
+      "color": "white",
+      "san": "Bb4",
+      "uci": "d2b4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 30,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nxb4",
+      "uci": "c6b4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.1298,
+      "estimated_total_score": 140.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 31,
+      "actor": "Human",
+      "color": "white",
+      "san": "axb4",
+      "uci": "a3b4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 32,
+      "actor": "AI",
+      "color": "black",
+      "san": "Ne4",
+      "uci": "c5e4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.07,
+      "estimated_total_score": -25.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 33,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nd4",
+      "uci": "f3d4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 34,
+      "actor": "AI",
+      "color": "black",
+      "san": "Bd7",
+      "uci": "c8d7",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0514,
+      "estimated_total_score": 145.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 35,
+      "actor": "Human",
+      "color": "white",
+      "san": "g4",
+      "uci": "g2g4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 36,
+      "actor": "AI",
+      "color": "black",
+      "san": "Ke7",
+      "uci": "e8e7",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0445,
+      "estimated_total_score": 189.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 37,
+      "actor": "Human",
+      "color": "white",
+      "san": "f5",
+      "uci": "f4f5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 38,
+      "actor": "AI",
+      "color": "black",
+      "san": "h6",
+      "uci": "h7h6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0312,
+      "estimated_total_score": 158.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 39,
+      "actor": "Human",
+      "color": "white",
+      "san": "b5",
+      "uci": "b4b5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 40,
+      "actor": "AI",
+      "color": "black",
+      "san": "Rab8",
+      "uci": "a8b8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0317,
+      "estimated_total_score": 149.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 41,
+      "actor": "Human",
+      "color": "white",
+      "san": "Bd3",
+      "uci": "e2d3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 42,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nf6",
+      "uci": "e4f6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0768,
+      "estimated_total_score": 93.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 43,
+      "actor": "Human",
+      "color": "white",
+      "san": "Rhg1",
+      "uci": "h1g1",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 44,
+      "actor": "AI",
+      "color": "black",
+      "san": "Ra8",
+      "uci": "b8a8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0383,
+      "estimated_total_score": 93.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 45,
+      "actor": "Human",
+      "color": "white",
+      "san": "h4",
+      "uci": "h2h4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 46,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd6",
+      "uci": "e7d6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0372,
+      "estimated_total_score": 105.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 47,
+      "actor": "Human",
+      "color": "white",
+      "san": "g5",
+      "uci": "g4g5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 48,
+      "actor": "AI",
+      "color": "black",
+      "san": "hxg5",
+      "uci": "h6g5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.1201,
+      "estimated_total_score": 120.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 49,
+      "actor": "Human",
+      "color": "white",
+      "san": "hxg5",
+      "uci": "h4g5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 50,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nh5",
+      "uci": "f6h5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0739,
+      "estimated_total_score": 39.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 51,
+      "actor": "Human",
+      "color": "white",
+      "san": "g6",
+      "uci": "g5g6",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 52,
+      "actor": "AI",
+      "color": "black",
+      "san": "f6",
+      "uci": "f7f6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0557,
+      "estimated_total_score": 6.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 53,
+      "actor": "Human",
+      "color": "white",
+      "san": "Rh1",
+      "uci": "g1h1",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 54,
+      "actor": "AI",
+      "color": "black",
+      "san": "Bxb5",
+      "uci": "d7b5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0456,
+      "estimated_total_score": -225.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 55,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nxb5+",
+      "uci": "d4b5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 56,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd7",
+      "uci": "d6d7",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.2438,
+      "estimated_total_score": -122.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 57,
+      "actor": "Human",
+      "color": "white",
+      "san": "Rhe1",
+      "uci": "h1e1",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 58,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nf4",
+      "uci": "h5f4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0669,
+      "estimated_total_score": -182.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 59,
+      "actor": "Human",
+      "color": "white",
+      "san": "c4",
+      "uci": "c2c4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 60,
+      "actor": "AI",
+      "color": "black",
+      "san": "Nxd3+",
+      "uci": "f4d3",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0625,
+      "estimated_total_score": -109.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 61,
+      "actor": "Human",
+      "color": "white",
+      "san": "Rxd3",
+      "uci": "d1d3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 62,
+      "actor": "AI",
+      "color": "black",
+      "san": "a6",
+      "uci": "a7a6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0469,
+      "estimated_total_score": -286.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 63,
+      "actor": "Human",
+      "color": "white",
+      "san": "Rxd5+",
+      "uci": "d3d5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 64,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kc8",
+      "uci": "d7c8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 1.0,
+      "estimated_total_score": -309.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 65,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nd4",
+      "uci": "b5d4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 66,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kb8",
+      "uci": "c8b8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.1155,
+      "estimated_total_score": -361.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 67,
+      "actor": "Human",
+      "color": "white",
+      "san": "Ne6",
+      "uci": "d4e6",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 68,
+      "actor": "AI",
+      "color": "black",
+      "san": "c6",
+      "uci": "c7c6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0673,
+      "estimated_total_score": -377.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 69,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nxg7",
+      "uci": "e6g7",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 70,
+      "actor": "AI",
+      "color": "black",
+      "san": "cxd5",
+      "uci": "c6d5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3681,
+      "estimated_total_score": 44.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 71,
+      "actor": "Human",
+      "color": "white",
+      "san": "cxd5",
+      "uci": "c4d5",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 72,
+      "actor": "AI",
+      "color": "black",
+      "san": "Rc8+",
+      "uci": "h8c8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0731,
+      "estimated_total_score": 16.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 73,
+      "actor": "Human",
+      "color": "white",
+      "san": "Kb1",
+      "uci": "c1b1",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 74,
+      "actor": "AI",
+      "color": "black",
+      "san": "Rc4",
+      "uci": "c8c4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0809,
+      "estimated_total_score": -19.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 75,
+      "actor": "Human",
+      "color": "white",
+      "san": "Ne8",
+      "uci": "g7e8",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 76,
+      "actor": "AI",
+      "color": "black",
+      "san": "Ka7",
+      "uci": "b8a7",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0722,
+      "estimated_total_score": -102.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 77,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nxf6",
+      "uci": "e8f6",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 78,
+      "actor": "AI",
+      "color": "black",
+      "san": "Rh8",
+      "uci": "a8h8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0584,
+      "estimated_total_score": -138.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 79,
+      "actor": "Human",
+      "color": "white",
+      "san": "g7",
+      "uci": "g6g7",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 80,
+      "actor": "AI",
+      "color": "black",
+      "san": "Rg8",
+      "uci": "h8g8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.208,
+      "estimated_total_score": -600.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 81,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nxg8",
+      "uci": "f6g8",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 82,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kb8",
+      "uci": "a7b8",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.0706,
+      "estimated_total_score": -664.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 83,
+      "actor": "Human",
+      "color": "white",
+      "san": "Ne7",
+      "uci": "g8e7",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 84,
+      "actor": "AI",
+      "color": "black",
+      "san": "Rc1+",
+      "uci": "c4c1",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.1454,
+      "estimated_total_score": -1203.0,
+      "search_depth": 2
+    },
+    {
+      "ply": 85,
+      "actor": "Human",
+      "color": "white",
+      "san": "Kxc1",
+      "uci": "b1c1",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 86,
+      "actor": "AI",
+      "color": "black",
+      "san": "b5",
+      "uci": "b7b5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.1691,
+      "estimated_total_score": -1975.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 87,
+      "actor": "Human",
+      "color": "white",
+      "san": "g8=Q+",
+      "uci": "g7g8q",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 88,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kb7",
+      "uci": "b8b7",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3461,
+      "estimated_total_score": -1992.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 89,
+      "actor": "Human",
+      "color": "white",
+      "san": "Qc8+",
+      "uci": "g8c8",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 90,
+      "actor": "AI",
+      "color": "black",
+      "san": "Ka7",
+      "uci": "b7a7",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.5125,
+      "estimated_total_score": -2006.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 91,
+      "actor": "Human",
+      "color": "white",
+      "san": "Nc6+",
+      "uci": "e7c6",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 92,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kb6",
+      "uci": "a7b6",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 1.0,
+      "estimated_total_score": -2045.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 93,
+      "actor": "Human",
+      "color": "white",
+      "san": "Re6",
+      "uci": "e1e6",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 94,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kc5",
+      "uci": "b6c5",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3497,
+      "estimated_total_score": -2031.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 95,
+      "actor": "Human",
+      "color": "white",
+      "san": "Ne7+",
+      "uci": "c6e7",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 96,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd4",
+      "uci": "c5d4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.5102,
+      "estimated_total_score": -2046.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 97,
+      "actor": "Human",
+      "color": "white",
+      "san": "f6",
+      "uci": "f5f6",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 98,
+      "actor": "AI",
+      "color": "black",
+      "san": "b4",
+      "uci": "b5b4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3456,
+      "estimated_total_score": -2073.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 99,
+      "actor": "Human",
+      "color": "white",
+      "san": "f7",
+      "uci": "f6f7",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 100,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd3",
+      "uci": "d4d3",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3333,
+      "estimated_total_score": -2842.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 101,
+      "actor": "Human",
+      "color": "white",
+      "san": "f8=Q",
+      "uci": "f7f8q",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 102,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd4",
+      "uci": "d3d4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 0.3556,
+      "estimated_total_score": -2861.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 103,
+      "actor": "Human",
+      "color": "white",
+      "san": "Qf4+",
+      "uci": "f8f4",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 104,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd3",
+      "uci": "d4d3",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 1.0,
+      "estimated_total_score": -100001.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 105,
+      "actor": "Human",
+      "color": "white",
+      "san": "Qf3+",
+      "uci": "f4f3",
+      "illegal": false,
+      "note": ""
+    },
+    {
+      "ply": 106,
+      "actor": "AI",
+      "color": "black",
+      "san": "Kd4",
+      "uci": "d3d4",
+      "illegal": false,
+      "note": "",
+      "estimated_win_probability": 1.0,
+      "estimated_total_score": -100001.0,
+      "search_depth": 3
+    },
+    {
+      "ply": 107,
+      "actor": "Human",
+      "color": "white",
+      "san": "Re4#",
+      "uci": "e6e4",
+      "illegal": false,
+      "note": ""
+    }
+  ],
+  "ai_learning_samples": [
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:d5",
+      "file:d",
+      "rank:5",
+      "ply:2",
+      "phase:opening",
+      "vector:pawn:2:0",
+      "pawn_two_step",
+      "center",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:queen",
+      "to:d6",
+      "file:d",
+      "rank:6",
+      "ply:4",
+      "phase:opening",
+      "vector:queen:2:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:c6",
+      "file:c",
+      "rank:6",
+      "ply:6",
+      "phase:opening",
+      "vector:knight:2:1",
+      "develops_minor",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:queen",
+      "to:b4",
+      "file:b",
+      "rank:4",
+      "ply:8",
+      "phase:opening",
+      "vector:queen:2:-2",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:queen",
+      "to:a5",
+      "file:a",
+      "rank:5",
+      "ply:10",
+      "phase:opening",
+      "vector:queen:-1:-1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:e5",
+      "file:e",
+      "rank:5",
+      "ply:12",
+      "phase:opening",
+      "vector:pawn:2:0",
+      "pawn_two_step",
+      "center",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:queen",
+      "to:a4",
+      "file:a",
+      "rank:4",
+      "ply:12",
+      "phase:opening",
+      "vector:queen:1:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:bishop",
+      "to:c5",
+      "file:c",
+      "rank:5",
+      "ply:12",
+      "phase:opening",
+      "vector:bishop:3:-3",
+      "capture",
+      "capture:knight",
+      "develops_minor",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:f4",
+      "file:f",
+      "rank:4",
+      "ply:12",
+      "phase:opening",
+      "vector:pawn:1:1",
+      "capture",
+      "capture:pawn",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:queen",
+      "to:e4",
+      "file:e",
+      "rank:4",
+      "ply:12",
+      "phase:opening",
+      "vector:queen:0:4",
+      "center",
+      "material:level",
+      "check"
+    ],
+    [
+      "mode:legal",
+      "piece:queen",
+      "to:e2",
+      "file:e",
+      "rank:2",
+      "ply:12",
+      "phase:opening",
+      "vector:queen:2:0",
+      "capture",
+      "capture:queen",
+      "material:level",
+      "check"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:f6",
+      "file:f",
+      "rank:6",
+      "ply:12",
+      "phase:opening",
+      "vector:knight:2:-1",
+      "develops_minor",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:e4",
+      "file:e",
+      "rank:4",
+      "ply:12",
+      "phase:opening",
+      "vector:knight:2:-1",
+      "center",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:c5",
+      "file:c",
+      "rank:5",
+      "ply:12",
+      "phase:opening",
+      "vector:knight:-1:-2",
+      "capture",
+      "capture:pawn",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:b4",
+      "file:b",
+      "rank:4",
+      "ply:12",
+      "phase:opening",
+      "vector:knight:2:-1",
+      "capture",
+      "capture:bishop",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:e4",
+      "file:e",
+      "rank:4",
+      "ply:12",
+      "phase:opening",
+      "vector:knight:1:2",
+      "center",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:bishop",
+      "to:d7",
+      "file:d",
+      "rank:7",
+      "ply:12",
+      "phase:opening",
+      "vector:bishop:1:1",
+      "develops_minor",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:e7",
+      "file:e",
+      "rank:7",
+      "ply:12",
+      "phase:opening",
+      "vector:king:1:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:h6",
+      "file:h",
+      "rank:6",
+      "ply:12",
+      "phase:opening",
+      "vector:pawn:1:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:b8",
+      "file:b",
+      "rank:8",
+      "ply:12",
+      "phase:opening",
+      "vector:rook:0:1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:f6",
+      "file:f",
+      "rank:6",
+      "ply:12",
+      "phase:opening",
+      "vector:knight:-2:1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:a8",
+      "file:a",
+      "rank:8",
+      "ply:12",
+      "phase:opening",
+      "vector:rook:0:-1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d6",
+      "file:d",
+      "rank:6",
+      "ply:12",
+      "phase:opening",
+      "vector:king:1:-1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:g5",
+      "file:g",
+      "rank:5",
+      "ply:12",
+      "phase:opening",
+      "vector:pawn:1:-1",
+      "capture",
+      "capture:pawn",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:h5",
+      "file:h",
+      "rank:5",
+      "ply:12",
+      "phase:middlegame",
+      "vector:knight:1:2",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:f6",
+      "file:f",
+      "rank:6",
+      "ply:12",
+      "phase:middlegame",
+      "vector:pawn:1:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:bishop",
+      "to:b5",
+      "file:b",
+      "rank:5",
+      "ply:12",
+      "phase:middlegame",
+      "vector:bishop:2:-2",
+      "capture",
+      "capture:pawn",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d7",
+      "file:d",
+      "rank:7",
+      "ply:12",
+      "phase:middlegame",
+      "vector:king:-1:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:f4",
+      "file:f",
+      "rank:4",
+      "ply:12",
+      "phase:middlegame",
+      "vector:knight:1:-2",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:knight",
+      "to:d3",
+      "file:d",
+      "rank:3",
+      "ply:12",
+      "phase:middlegame",
+      "vector:knight:1:-2",
+      "capture",
+      "capture:bishop",
+      "material:level",
+      "check"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:a6",
+      "file:a",
+      "rank:6",
+      "ply:12",
+      "phase:middlegame",
+      "vector:pawn:1:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:c8",
+      "file:c",
+      "rank:8",
+      "ply:12",
+      "phase:middlegame",
+      "vector:king:-1:-1",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:b8",
+      "file:b",
+      "rank:8",
+      "ply:12",
+      "phase:middlegame",
+      "vector:king:0:-1",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:c6",
+      "file:c",
+      "rank:6",
+      "ply:12",
+      "phase:middlegame",
+      "vector:pawn:1:0",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:d5",
+      "file:d",
+      "rank:5",
+      "ply:12",
+      "phase:middlegame",
+      "vector:pawn:1:1",
+      "capture",
+      "capture:rook",
+      "center",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:c8",
+      "file:c",
+      "rank:8",
+      "ply:12",
+      "phase:middlegame",
+      "vector:rook:0:-5",
+      "material:level",
+      "check"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:c4",
+      "file:c",
+      "rank:4",
+      "ply:12",
+      "phase:middlegame",
+      "vector:rook:4:0",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:a7",
+      "file:a",
+      "rank:7",
+      "ply:12",
+      "phase:middlegame",
+      "vector:king:1:-1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:h8",
+      "file:h",
+      "rank:8",
+      "ply:12",
+      "phase:middlegame",
+      "vector:rook:0:7",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:g8",
+      "file:g",
+      "rank:8",
+      "ply:12",
+      "phase:middlegame",
+      "vector:rook:0:-1",
+      "material:level"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:b8",
+      "file:b",
+      "rank:8",
+      "ply:12",
+      "phase:middlegame",
+      "vector:king:-1:1",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:rook",
+      "to:c1",
+      "file:c",
+      "rank:1",
+      "ply:12",
+      "phase:middlegame",
+      "vector:rook:3:0",
+      "material:behind",
+      "check"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:b5",
+      "file:b",
+      "rank:5",
+      "ply:12",
+      "phase:endgame",
+      "vector:pawn:2:0",
+      "pawn_two_step",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:b7",
+      "file:b",
+      "rank:7",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:1:0",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:a7",
+      "file:a",
+      "rank:7",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:0:-1",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:b6",
+      "file:b",
+      "rank:6",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:1:1",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:c5",
+      "file:c",
+      "rank:5",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:1:1",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d4",
+      "file:d",
+      "rank:4",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:1:1",
+      "center",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:pawn",
+      "to:b4",
+      "file:b",
+      "rank:4",
+      "ply:12",
+      "phase:endgame",
+      "vector:pawn:1:0",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d3",
+      "file:d",
+      "rank:3",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:1:0",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d4",
+      "file:d",
+      "rank:4",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:-1:0",
+      "center",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d3",
+      "file:d",
+      "rank:3",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:1:0",
+      "material:behind"
+    ],
+    [
+      "mode:legal",
+      "piece:king",
+      "to:d4",
+      "file:d",
+      "rank:4",
+      "ply:12",
+      "phase:endgame",
+      "vector:king:-1:0",
+      "center",
+      "material:behind"
+    ]
+  ],
+  "ai_decisions": [
+    {
+      "move": "d5",
+      "uci": "d7d5",
+      "estimated_win_probability": 0.0705,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "d7d5",
+          "probability": 0.0705,
+          "score": 2.0
+        },
+        {
+          "uci": "e7e6",
+          "probability": 0.0615,
+          "score": -28.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.0609,
+          "score": -30.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Qd6",
+      "uci": "d8d6",
+      "estimated_win_probability": 0.0483,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "d8d6",
+          "probability": 0.0483,
+          "score": -14.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.0474,
+          "score": -18.0
+        },
+        {
+          "uci": "b8c6",
+          "probability": 0.0466,
+          "score": -22.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nc6",
+      "uci": "b8c6",
+      "estimated_win_probability": 0.0414,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "b8c6",
+          "probability": 0.0414,
+          "score": 16.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.0401,
+          "score": 9.0
+        },
+        {
+          "uci": "c8f5",
+          "probability": 0.0375,
+          "score": -6.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Qb4",
+      "uci": "d6b4",
+      "estimated_win_probability": 0.0526,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "d6b4",
+          "probability": 0.0526,
+          "score": -35.0
+        },
+        {
+          "uci": "e7e5",
+          "probability": 0.0386,
+          "score": -103.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.0384,
+          "score": -104.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Qa5",
+      "uci": "b4a5",
+      "estimated_win_probability": 0.3269,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "b4a5",
+          "probability": 0.3269,
+          "score": -63.0
+        },
+        {
+          "uci": "b4d6",
+          "probability": 0.2161,
+          "score": -154.0
+        },
+        {
+          "uci": "b4b6",
+          "probability": 0.1938,
+          "score": -178.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "e5",
+      "uci": "e7e5",
+      "estimated_win_probability": 0.0558,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e7e5",
+          "probability": 0.0558,
+          "score": -122.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.0526,
+          "score": -135.0
+        },
+        {
+          "uci": "c8f5",
+          "probability": 0.0483,
+          "score": -154.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Qa4",
+      "uci": "a5a4",
+      "estimated_win_probability": 0.2331,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "a5a4",
+          "probability": 0.2331,
+          "score": -151.0
+        },
+        {
+          "uci": "a5b6",
+          "probability": 0.2268,
+          "score": -157.0
+        },
+        {
+          "uci": "f8b4",
+          "probability": 0.0926,
+          "score": -354.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Bxc5",
+      "uci": "f8c5",
+      "estimated_win_probability": 0.6284,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "f8c5",
+          "probability": 0.6284,
+          "score": 112.0
+        },
+        {
+          "uci": "c6d4",
+          "probability": 0.0199,
+          "score": -647.0
+        },
+        {
+          "uci": "e5d4",
+          "probability": 0.017,
+          "score": -682.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "exf4",
+      "uci": "e5f4",
+      "estimated_win_probability": 0.0581,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e5f4",
+          "probability": 0.0581,
+          "score": 74.0
+        },
+        {
+          "uci": "e5e4",
+          "probability": 0.0555,
+          "score": 64.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.041,
+          "score": -3.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Qe4+",
+      "uci": "a4e4",
+      "estimated_win_probability": 0.0493,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "a4e4",
+          "probability": 0.0493,
+          "score": 88.0
+        },
+        {
+          "uci": "g8f6",
+          "probability": 0.0467,
+          "score": 76.0
+        },
+        {
+          "uci": "g8e7",
+          "probability": 0.045,
+          "score": 68.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Qxe2+",
+      "uci": "e4e2",
+      "estimated_win_probability": 0.7077,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e4e2",
+          "probability": 0.7077,
+          "score": 10.0
+        },
+        {
+          "uci": "g8e7",
+          "probability": 0.0115,
+          "score": -897.0
+        },
+        {
+          "uci": "c8e6",
+          "probability": 0.0111,
+          "score": -905.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nf6",
+      "uci": "g8f6",
+      "estimated_win_probability": 0.0505,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "g8f6",
+          "probability": 0.0505,
+          "score": 16.0
+        },
+        {
+          "uci": "g8e7",
+          "probability": 0.0465,
+          "score": -2.0
+        },
+        {
+          "uci": "c8f5",
+          "probability": 0.0463,
+          "score": -3.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Ne4",
+      "uci": "f6e4",
+      "estimated_win_probability": 0.0451,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "f6e4",
+          "probability": 0.0451,
+          "score": 80.0
+        },
+        {
+          "uci": "c8f5",
+          "probability": 0.0449,
+          "score": 79.0
+        },
+        {
+          "uci": "c8e6",
+          "probability": 0.042,
+          "score": 64.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nxc5",
+      "uci": "e4c5",
+      "estimated_win_probability": 0.0495,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e4c5",
+          "probability": 0.0495,
+          "score": 115.0
+        },
+        {
+          "uci": "c8g4",
+          "probability": 0.0411,
+          "score": 74.0
+        },
+        {
+          "uci": "c8e6",
+          "probability": 0.0393,
+          "score": 64.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nxb4",
+      "uci": "c6b4",
+      "estimated_win_probability": 0.1298,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c6b4",
+          "probability": 0.1298,
+          "score": 140.0
+        },
+        {
+          "uci": "c5e4",
+          "probability": 0.0545,
+          "score": -51.0
+        },
+        {
+          "uci": "c5e6",
+          "probability": 0.044,
+          "score": -98.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Ne4",
+      "uci": "c5e4",
+      "estimated_win_probability": 0.07,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c5e4",
+          "probability": 0.07,
+          "score": -25.0
+        },
+        {
+          "uci": "c5e6",
+          "probability": 0.0565,
+          "score": -72.0
+        },
+        {
+          "uci": "c5d7",
+          "probability": 0.0518,
+          "score": -91.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Bd7",
+      "uci": "c8d7",
+      "estimated_win_probability": 0.0514,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c8d7",
+          "probability": 0.0514,
+          "score": 145.0
+        },
+        {
+          "uci": "e8e7",
+          "probability": 0.0461,
+          "score": 121.0
+        },
+        {
+          "uci": "e8g8",
+          "probability": 0.0457,
+          "score": 119.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Ke7",
+      "uci": "e8e7",
+      "estimated_win_probability": 0.0445,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e8e7",
+          "probability": 0.0445,
+          "score": 189.0
+        },
+        {
+          "uci": "e8g8",
+          "probability": 0.0433,
+          "score": 183.0
+        },
+        {
+          "uci": "h7h6",
+          "probability": 0.0395,
+          "score": 163.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "h6",
+      "uci": "h7h6",
+      "estimated_win_probability": 0.0312,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "h7h6",
+          "probability": 0.0312,
+          "score": 158.0
+        },
+        {
+          "uci": "h8g8",
+          "probability": 0.0306,
+          "score": 154.0
+        },
+        {
+          "uci": "a8b8",
+          "probability": 0.0306,
+          "score": 154.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Rab8",
+      "uci": "a8b8",
+      "estimated_win_probability": 0.0317,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "a8b8",
+          "probability": 0.0317,
+          "score": 149.0
+        },
+        {
+          "uci": "h8g8",
+          "probability": 0.0311,
+          "score": 145.0
+        },
+        {
+          "uci": "f7f6",
+          "probability": 0.0308,
+          "score": 143.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nf6",
+      "uci": "e4f6",
+      "estimated_win_probability": 0.0768,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e4f6",
+          "probability": 0.0768,
+          "score": 93.0
+        },
+        {
+          "uci": "e4d6",
+          "probability": 0.0764,
+          "score": 92.0
+        },
+        {
+          "uci": "e4c5",
+          "probability": 0.0764,
+          "score": 92.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Ra8",
+      "uci": "b8a8",
+      "estimated_win_probability": 0.0383,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "b8a8",
+          "probability": 0.0383,
+          "score": 93.0
+        },
+        {
+          "uci": "e7d6",
+          "probability": 0.0382,
+          "score": 92.0
+        },
+        {
+          "uci": "e7f8",
+          "probability": 0.0378,
+          "score": 90.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd6",
+      "uci": "e7d6",
+      "estimated_win_probability": 0.0372,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "e7d6",
+          "probability": 0.0372,
+          "score": 105.0
+        },
+        {
+          "uci": "e7f8",
+          "probability": 0.0362,
+          "score": 99.0
+        },
+        {
+          "uci": "a8b8",
+          "probability": 0.036,
+          "score": 98.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "hxg5",
+      "uci": "h6g5",
+      "estimated_win_probability": 0.1201,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "h6g5",
+          "probability": 0.1201,
+          "score": 120.0
+        },
+        {
+          "uci": "f6h5",
+          "probability": 0.0565,
+          "score": -46.0
+        },
+        {
+          "uci": "f6h7",
+          "probability": 0.0521,
+          "score": -64.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nh5",
+      "uci": "f6h5",
+      "estimated_win_probability": 0.0739,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "f6h5",
+          "probability": 0.0739,
+          "score": 39.0
+        },
+        {
+          "uci": "f6h7",
+          "probability": 0.0681,
+          "score": 21.0
+        },
+        {
+          "uci": "f6g8",
+          "probability": 0.0681,
+          "score": 21.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "f6",
+      "uci": "f7f6",
+      "estimated_win_probability": 0.0557,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "f7f6",
+          "probability": 0.0557,
+          "score": 6.0
+        },
+        {
+          "uci": "f7g6",
+          "probability": 0.0549,
+          "score": 3.0
+        },
+        {
+          "uci": "h5f4",
+          "probability": 0.0471,
+          "score": -31.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Bxb5",
+      "uci": "d7b5",
+      "estimated_win_probability": 0.0456,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "d7b5",
+          "probability": 0.0456,
+          "score": -225.0
+        },
+        {
+          "uci": "d7f5",
+          "probability": 0.0454,
+          "score": -226.0
+        },
+        {
+          "uci": "d6e7",
+          "probability": 0.0421,
+          "score": -243.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd7",
+      "uci": "d6d7",
+      "estimated_win_probability": 0.2438,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "d6d7",
+          "probability": 0.2438,
+          "score": -122.0
+        },
+        {
+          "uci": "d6c5",
+          "probability": 0.2267,
+          "score": -138.0
+        },
+        {
+          "uci": "d6e7",
+          "probability": 0.1934,
+          "score": -173.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nf4",
+      "uci": "h5f4",
+      "estimated_win_probability": 0.0669,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "h5f4",
+          "probability": 0.0669,
+          "score": -182.0
+        },
+        {
+          "uci": "h5g3",
+          "probability": 0.0628,
+          "score": -196.0
+        },
+        {
+          "uci": "c7c5",
+          "probability": 0.0563,
+          "score": -220.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Nxd3+",
+      "uci": "f4d3",
+      "estimated_win_probability": 0.0625,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "f4d3",
+          "probability": 0.0625,
+          "score": -109.0
+        },
+        {
+          "uci": "d5c4",
+          "probability": 0.051,
+          "score": -154.0
+        },
+        {
+          "uci": "d5d4",
+          "probability": 0.0354,
+          "score": -234.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "a6",
+      "uci": "a7a6",
+      "estimated_win_probability": 0.0469,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "a7a6",
+          "probability": 0.0469,
+          "score": -286.0
+        },
+        {
+          "uci": "h8h2",
+          "probability": 0.0459,
+          "score": -291.0
+        },
+        {
+          "uci": "a7a5",
+          "probability": 0.0459,
+          "score": -291.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kc8",
+      "uci": "d7c8",
+      "estimated_win_probability": 1.0,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "d7c8",
+          "probability": 1.0,
+          "score": -309.0
+        },
+        {
+          "uci": "d7c6",
+          "probability": 0.0,
+          "score": -100001.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kb8",
+      "uci": "c8b8",
+      "estimated_win_probability": 0.1155,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c8b8",
+          "probability": 0.1155,
+          "score": -361.0
+        },
+        {
+          "uci": "a8a7",
+          "probability": 0.1119,
+          "score": -368.0
+        },
+        {
+          "uci": "a8b8",
+          "probability": 0.1074,
+          "score": -377.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "c6",
+      "uci": "c7c6",
+      "estimated_win_probability": 0.0673,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c7c6",
+          "probability": 0.0673,
+          "score": -377.0
+        },
+        {
+          "uci": "b8a7",
+          "probability": 0.0655,
+          "score": -383.0
+        },
+        {
+          "uci": "a8a7",
+          "probability": 0.064,
+          "score": -388.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "cxd5",
+      "uci": "c6d5",
+      "estimated_win_probability": 0.3681,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c6d5",
+          "probability": 0.3681,
+          "score": 44.0
+        },
+        {
+          "uci": "b8a7",
+          "probability": 0.0459,
+          "score": -414.0
+        },
+        {
+          "uci": "a8a7",
+          "probability": 0.0447,
+          "score": -420.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Rc8+",
+      "uci": "h8c8",
+      "estimated_win_probability": 0.0731,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "h8c8",
+          "probability": 0.0731,
+          "score": 16.0
+        },
+        {
+          "uci": "b8a7",
+          "probability": 0.0701,
+          "score": 7.0
+        },
+        {
+          "uci": "a8a7",
+          "probability": 0.0682,
+          "score": 1.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Rc4",
+      "uci": "c8c4",
+      "estimated_win_probability": 0.0809,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c8c4",
+          "probability": 0.0809,
+          "score": -19.0
+        },
+        {
+          "uci": "c8c7",
+          "probability": 0.0802,
+          "score": -21.0
+        },
+        {
+          "uci": "a8a7",
+          "probability": 0.0784,
+          "score": -26.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Ka7",
+      "uci": "b8a7",
+      "estimated_win_probability": 0.0722,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "b8a7",
+          "probability": 0.0722,
+          "score": -102.0
+        },
+        {
+          "uci": "c4d4",
+          "probability": 0.0709,
+          "score": -106.0
+        },
+        {
+          "uci": "a8a7",
+          "probability": 0.0706,
+          "score": -107.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Rh8",
+      "uci": "a8h8",
+      "estimated_win_probability": 0.0584,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "a8h8",
+          "probability": 0.0584,
+          "score": -138.0
+        },
+        {
+          "uci": "a8d8",
+          "probability": 0.0584,
+          "score": -138.0
+        },
+        {
+          "uci": "a8c8",
+          "probability": 0.0573,
+          "score": -142.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Rg8",
+      "uci": "h8g8",
+      "estimated_win_probability": 0.208,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "h8g8",
+          "probability": 0.208,
+          "score": -600.0
+        },
+        {
+          "uci": "c4c1",
+          "probability": 0.1382,
+          "score": -690.0
+        },
+        {
+          "uci": "h8e8",
+          "probability": 0.0537,
+          "score": -898.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kb8",
+      "uci": "a7b8",
+      "estimated_win_probability": 0.0706,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "a7b8",
+          "probability": 0.0706,
+          "score": -664.0
+        },
+        {
+          "uci": "c4d4",
+          "probability": 0.0681,
+          "score": -672.0
+        },
+        {
+          "uci": "c4c8",
+          "probability": 0.0662,
+          "score": -678.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Rc1+",
+      "uci": "c4c1",
+      "estimated_win_probability": 0.1454,
+      "search_depth": 2,
+      "top_choices": [
+        {
+          "uci": "c4c1",
+          "probability": 0.1454,
+          "score": -1203.0
+        },
+        {
+          "uci": "c4e4",
+          "probability": 0.0504,
+          "score": -1436.0
+        },
+        {
+          "uci": "c4c8",
+          "probability": 0.0497,
+          "score": -1439.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "b5",
+      "uci": "b7b5",
+      "estimated_win_probability": 0.1691,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "b7b5",
+          "probability": 0.1691,
+          "score": -1975.0
+        },
+        {
+          "uci": "b8c7",
+          "probability": 0.1675,
+          "score": -1977.0
+        },
+        {
+          "uci": "b8a8",
+          "probability": 0.1675,
+          "score": -1977.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kb7",
+      "uci": "b8b7",
+      "estimated_win_probability": 0.3461,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "b8b7",
+          "probability": 0.3461,
+          "score": -1992.0
+        },
+        {
+          "uci": "b8a7",
+          "probability": 0.3277,
+          "score": -2004.0
+        },
+        {
+          "uci": "b8c7",
+          "probability": 0.3262,
+          "score": -2005.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Ka7",
+      "uci": "b7a7",
+      "estimated_win_probability": 0.5125,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "b7a7",
+          "probability": 0.5125,
+          "score": -2006.0
+        },
+        {
+          "uci": "b7b6",
+          "probability": 0.4875,
+          "score": -2017.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kb6",
+      "uci": "a7b6",
+      "estimated_win_probability": 1.0,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "a7b6",
+          "probability": 1.0,
+          "score": -2045.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kc5",
+      "uci": "b6c5",
+      "estimated_win_probability": 0.3497,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "b6c5",
+          "probability": 0.3497,
+          "score": -2031.0
+        },
+        {
+          "uci": "b5b4",
+          "probability": 0.3296,
+          "score": -2044.0
+        },
+        {
+          "uci": "a6a5",
+          "probability": 0.3207,
+          "score": -2050.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd4",
+      "uci": "c5d4",
+      "estimated_win_probability": 0.5102,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "c5d4",
+          "probability": 0.5102,
+          "score": -2046.0
+        },
+        {
+          "uci": "c5b4",
+          "probability": 0.4898,
+          "score": -2055.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "b4",
+      "uci": "b5b4",
+      "estimated_win_probability": 0.3456,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "b5b4",
+          "probability": 0.3456,
+          "score": -2073.0
+        },
+        {
+          "uci": "a6a5",
+          "probability": 0.3302,
+          "score": -2083.0
+        },
+        {
+          "uci": "d4d3",
+          "probability": 0.3242,
+          "score": -2087.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd3",
+      "uci": "d4d3",
+      "estimated_win_probability": 0.3333,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "d4d3",
+          "probability": 0.3333,
+          "score": -2842.0
+        },
+        {
+          "uci": "b4b3",
+          "probability": 0.3333,
+          "score": -2842.0
+        },
+        {
+          "uci": "a6a5",
+          "probability": 0.3333,
+          "score": -2842.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd4",
+      "uci": "d3d4",
+      "estimated_win_probability": 0.3556,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "d3d4",
+          "probability": 0.3556,
+          "score": -2861.0
+        },
+        {
+          "uci": "a6a5",
+          "probability": 0.3383,
+          "score": -2872.0
+        },
+        {
+          "uci": "b4b3",
+          "probability": 0.3061,
+          "score": -2894.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd3",
+      "uci": "d4d3",
+      "estimated_win_probability": 1.0,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "d4d3",
+          "probability": 1.0,
+          "score": -100001.0
+        }
+      ],
+      "mode": "legal"
+    },
+    {
+      "move": "Kd4",
+      "uci": "d3d4",
+      "estimated_win_probability": 1.0,
+      "search_depth": 3,
+      "top_choices": [
+        {
+          "uci": "d3d4",
+          "probability": 1.0,
+          "score": -100001.0
+        }
+      ],
+      "mode": "legal"
+    }
+  ],
+  "finished_at": "2026-04-13T10:35:15",
+  "result": "1-0",
+  "winner": "white",
+  "outcome_reason": "checkmate",
+  "san_moves": [
+    "f4",
+    "d5",
+    "d4",
+    "Qd6",
+    "e3",
+    "Nc6",
+    "Nc3",
+    "Qb4",
+    "a3",
+    "Qa5",
+    "Bd2",
+    "e5",
+    "Ne4",
+    "Qa4",
+    "Nc5",
+    "Bxc5",
+    "dxc5",
+    "exf4",
+    "exf4",
+    "Qe4+",
+    "Qe2",
+    "Qxe2+",
+    "Bxe2",
+    "Nf6",
+    "O-O-O",
+    "Ne4",
+    "Nf3",
+    "Nxc5",
+    "Bb4",
+    "Nxb4",
+    "axb4",
+    "Ne4",
+    "Nd4",
+    "Bd7",
+    "g4",
+    "Ke7",
+    "f5",
+    "h6",
+    "b5",
+    "Rab8",
+    "Bd3",
+    "Nf6",
+    "Rhg1",
+    "Ra8",
+    "h4",
+    "Kd6",
+    "g5",
+    "hxg5",
+    "hxg5",
+    "Nh5",
+    "g6",
+    "f6",
+    "Rh1",
+    "Bxb5",
+    "Nxb5+",
+    "Kd7",
+    "Rhe1",
+    "Nf4",
+    "c4",
+    "Nxd3+",
+    "Rxd3",
+    "a6",
+    "Rxd5+",
+    "Kc8",
+    "Nd4",
+    "Kb8",
+    "Ne6",
+    "c6",
+    "Nxg7",
+    "cxd5",
+    "cxd5",
+    "Rc8+",
+    "Kb1",
+    "Rc4",
+    "Ne8",
+    "Ka7",
+    "Nxf6",
+    "Rh8",
+    "g7",
+    "Rg8",
+    "Nxg8",
+    "Kb8",
+    "Ne7",
+    "Rc1+",
+    "Kxc1",
+    "b5",
+    "g8=Q+",
+    "Kb7",
+    "Qc8+",
+    "Ka7",
+    "Nc6+",
+    "Kb6",
+    "Re6",
+    "Kc5",
+    "Ne7+",
+    "Kd4",
+    "f6",
+    "b4",
+    "f7",
+    "Kd3",
+    "f8=Q",
+    "Kd4",
+    "Qf4+",
+    "Kd3",
+    "Qf3+",
+    "Kd4",
+    "Re4#"
+  ],
+  "pgn": "[Event \"Chess Popup\"]\n[Site \"Local Desktop\"]\n[Date \"2026.04.13\"]\n[White \"You\"]\n[Black \"Legal Bot\"]\n[Result \"1-0\"]\n[BotMode \"legal\"]\n[PlayerColor \"white\"]\n[OutcomeReason \"checkmate\"]\n\n1. f4 d5 2. d4 Qd6 3. e3 Nc6 4. Nc3 Qb4 5. a3 Qa5 6. Bd2 e5 7. Ne4 Qa4 8. Nc5 Bxc5 9. dxc5 exf4 10. exf4 Qe4+ 11. Qe2 Qxe2+ 12. Bxe2 Nf6 13. O-O-O Ne4 14. Nf3 Nxc5 15. Bb4 Nxb4 16. axb4 Ne4 17. Nd4 Bd7 18. g4 Ke7 19. f5 h6 20. b5 Rab8 21. Bd3 Nf6 22. Rhg1 Ra8 23. h4 Kd6 24. g5 hxg5 25. hxg5 Nh5 26. g6 f6 27. Rh1 Bxb5 28. Nxb5+ Kd7 29. Rhe1 Nf4 30. c4 Nxd3+ 31. Rxd3 a6 32. Rxd5+ Kc8 33. Nd4 Kb8 34. Ne6 c6 35. Nxg7 cxd5 36. cxd5 Rc8+ 37. Kb1 Rc4 38. Ne8 Ka7 39. Nxf6 Rh8 40. g7 Rg8 41. Nxg8 Kb8 42. Ne7 Rc1+ 43. Kxc1 b5 44. g8=Q+ Kb7 45. Qc8+ Ka7 46. Nc6+ Kb6 47. Re6 Kc5 48. Ne7+ Kd4 49. f6 b4 50. f7 Kd3 51. f8=Q Kd4 52. Qf4+ Kd3 53. Qf3+ Kd4 54. Re4# 1-0\n",
+  "board_key": "2Q5/4N3/p7/3P4/1p1kR3/5Q2/1P6/2K5",
+  "last_ai_summary": {
+    "move": "Kd4",
+    "uci": "d3d4",
+    "estimated_win_probability": 1.0,
+    "search_depth": 3,
+    "top_choices": [
+      {
+        "uci": "d3d4",
+        "probability": 1.0,
+        "score": -100001.0
+      }
+    ],
+    "mode": "legal"
+  }
+}

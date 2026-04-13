@@ -2,27 +2,8 @@ Core chess app prompt completed.
 
 Optional ideas to add after the core app is finished:
 
-1. Add difficulty levels such as Easy, Medium, and Hard by changing search depth and randomness.
-2. Add Undo Move and Restart Game buttons.
-3. Add Resign and Offer Draw buttons.
-4. Add automatic board flipping when the player chooses Black.
-5. Show captured pieces in a side panel.
-6. Show larger visual banners for check, checkmate, stalemate, and draw.
-7. Add move replay mode for finished games so moves can be stepped forward and backward.
-8. Load and replay old .pgn games from game_records.
-9. Export a clean PGN summary for each game.
-10. Add multiple board themes and alternate piece sets.
-11. Add move sounds, capture sounds, check sounds, and a visible mute button.
-12. Add small piece animations for movement.
-13. Add a Hint button powered by the same AI engine.
-14. Add a post-game analysis panel for blunders, best moves, and missed tactics.
-15. Add timers and a chess clock mode.
-16. Track player stats over time such as wins, losses, draws, and rating.
-17. Add opening-book logic so the bot plays stronger opening moves.
-18. Add endgame shortcut logic for simple endgames.
-19. Let the bot self-play in the background to improve its learning data faster.
-20. Add multiple Illegal Bot personalities such as chaotic, greedy, and sneaky.
-21. Add a board editor with FEN import and export.
-22. Add autosave and resume for unfinished games.
-23. Package the whole project as a single Windows .exe instead of script-based launch files.
-24. Add different timed game modes such as Unlimited, Bullet, Blitz, Rapid, and Custom time controls.
+1. Load and replay standalone .pgn files directly from game_records without relying on the matching .json record.
+2. Add endgame shortcut logic for simple endgames.
+3. Let the bot self-play in the background to improve its learning data faster.
+4. Add a board editor with FEN import and export.
+5. Package the whole project as a single Windows .exe instead of script-based launch files.

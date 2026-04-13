@@ -2,4 +2,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.log
+*.pid
+build/
+dist/
+*.spec
 bot_learning.json
+current_game_autosave.json
+player_stats.json

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Chess Popup</title>
+  <link rel="stylesheet" type="text/css" href="/chess_popup.css" />
+</head>
+<body class="theme-classic">
+  <div id="app-shell">
+    <div id="board-column">
+      <div id="banner" class="banner hidden"></div>
+      <div id="clock-row">
+        <div id="white-clock" class="clock-box">White: unlimited</div>
+        <div id="black-clock" class="clock-box">Black: unlimited</div>
+      </div>
+      <div id="board-frame">
+        <div id="rank-labels"></div>
+        <div id="board"></div>
+      </div>
+      <div id="file-labels"></div>
+    </div>
+
+    <div id="side-panel">
+      <div class="panel-title">Chess Popup</div>
+      <div class="panel-subtitle">A1 is the dark square at the bottom-left.</div>
+
+      <div class="card">
+        <div class="card-title">Bot Mode</div>
+        <label class="radio-row">
+          <input type="radio" name="bot-mode" value="legal" checked="checked" />
+          <span>Legal Bot</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="bot-mode" value="illegal" />
+          <span>Illegal Bot</span>
+        </label>
+        <div class="field-label">Difficulty</div>
+        <select id="difficulty" class="select-box">
+          <option value="easy">Easy</option>
+          <option value="medium" selected="selected">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+        <div class="field-label">Illegal Personality</div>
+        <select id="illegal-personality" class="select-box">
+          <option value="standard">Standard</option>
+          <option value="chaotic">Chaotic</option>
+          <option value="greedy">Greedy</option>
+          <option value="sneaky">Sneaky</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Play As</div>
+        <label class="radio-row">
+          <input type="radio" name="player-color" value="white" checked="checked" />
+          <span>White Pieces</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="player-color" value="black" />
+          <span>Black Pieces</span>
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Clock</div>
+        <div class="field-label">Mode</div>
+        <select id="time-mode" class="select-box">
+          <option value="unlimited">Unlimited</option>
+          <option value="bullet">Bullet</option>
+          <option value="blitz">Blitz</option>
+          <option value="rapid">Rapid</option>
+          <option value="custom">Custom</option>
+        </select>
+        <div class="split-fields">
+          <div>
+            <div class="field-label">Minutes</div>
+            <input id="custom-minutes" class="text-box" type="text" value="10" />
+          </div>
+          <div>
+            <div class="field-label">Increment</div>
+            <input id="custom-increment" class="text-box" type="text" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Appearance</div>
+        <div class="field-label">Theme</div>
+        <select id="theme" class="select-box">
+          <option value="classic">Classic</option>
+          <option value="forest">Forest</option>
+          <option value="slate">Slate</option>
+        </select>
+        <div class="field-label">Piece Set</div>
+        <select id="piece-set" class="select-box">
+          <option value="classic">Classic</option>
+          <option value="letters">Letters</option>
+        </select>
+        <label class="check-row">
+          <input id="auto-flip" type="checkbox" checked="checked" />
+          <span>Auto flip when playing Black</span>
+        </label>
+      </div>
+
+      <button id="play-button" type="button">Play</button>
+
+      <div id="live-toolbar" class="toolbar">
+        <button id="resume-button" type="button" class="small-button">Resume</button>
+        <button id="undo-button" type="button" class="small-button">Undo</button>
+        <button id="restart-button" type="button" class="small-button">Restart</button>
+        <button id="hint-button" type="button" class="small-button">Hint</button>
+        <button id="draw-button" type="button" class="small-button">Offer Draw</button>
+        <button id="resign-button" type="button" class="small-button">Resign</button>
+        <button id="copy-pgn-button" type="button" class="small-button">Copy PGN</button>
+        <button id="mute-button" type="button" class="small-button">Mute</button>
+      </div>
+
+      <div id="replay-toolbar" class="toolbar hidden">
+        <button id="replay-prev" type="button" class="small-button">Prev</button>
+        <button id="replay-next" type="button" class="small-button">Next</button>
+        <button id="replay-close" type="button" class="small-button">Close Replay</button>
+        <button id="replay-copy-pgn-button" type="button" class="small-button">Copy PGN</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Status</div>
+        <div id="status-text" class="status-text">Choose your settings and press Play.</div>
+        <div id="thought-text" class="thought-text">The board opens in standard chess setup.</div>
+      </div>
+
+      <div id="record-summary" class="record-summary"></div>
+
+      <div class="card">
+        <div class="card-title">Captured Pieces</div>
+        <div class="capture-row"><span>By White</span><div id="captured-white" class="capture-panel">None</div></div>
+        <div class="capture-row"><span>By Black</span><div id="captured-black" class="capture-panel">None</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Game Record</div>
+        <div id="move-history" class="scroll-panel">No moves yet.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">AI Notes</div>
+        <div id="ai-insight" class="scroll-panel insight-panel">Top move probabilities will appear here after the bot moves.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Analysis</div>
+        <div id="analysis-panel" class="scroll-panel">Post-game analysis appears here when a game finishes.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Saved Games</div>
+        <div id="saved-games" class="scroll-panel"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="promotion-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="card-title">Choose Promotion</div>
+      <div class="modal-subtitle">Promote your pawn to:</div>
+      <div id="promotion-buttons"></div>
+      <button id="promotion-cancel" type="button" class="small-button cancel-button">Cancel</button>
+    </div>
+  </div>
+
+  <div id="result-modal" class="modal hidden">
+    <div class="modal-card result-card">
+      <div id="result-title" class="card-title result-title">Game Over</div>
+      <div id="result-subtitle" class="modal-subtitle">The game has finished.</div>
+      <div id="result-summary" class="result-summary"></div>
+      <div class="result-actions">
+        <button id="result-play-again" type="button" class="small-button">Play Again</button>
+        <button id="result-review" type="button" class="small-button cancel-button">Review Board</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="/chess_popup.js"></script>
+</body>
+</html>

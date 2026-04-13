@@ -27,6 +27,15 @@ class ChessServiceTests(unittest.TestCase):
         self.assertEqual(payload["botMode"], "illegal")
         self.assertEqual(len(payload["availableMoves"]), 20)
 
+    def test_separate_data_directory_is_used_for_runtime_files(self) -> None:
+        assets_dir = PROJECT_DIR
+        data_dir = self.test_dir / "runtime"
+        service = ChessService(assets_dir, data_dir=data_dir)
+        service.start_game("white", "legal")
+        self.assertEqual(service.autosave_path, data_dir / "current_game_autosave.json")
+        self.assertTrue((data_dir / "game_records").exists())
+        self.assertTrue((data_dir / "current_game_autosave.json").exists())
+
     def test_human_then_ai_move_updates_history(self) -> None:
         service = ChessService(self.test_dir)
         service.start_game("white", "legal")
@@ -35,6 +44,23 @@ class ChessServiceTests(unittest.TestCase):
         after_ai = service.play_ai_move()
         self.assertEqual(len(after_ai["moveHistory"]), 2)
         self.assertIsNotNone(after_ai["lastAiSummary"])
+        hint = service.get_hint()
+        self.assertIn("hint", hint)
+
+    def test_undo_and_resume_restore_active_game(self) -> None:
+        service = ChessService(self.test_dir)
+        service.start_game("black", "legal", difficulty="easy", time_mode="bullet")
+        after_ai = service.play_ai_move()
+        self.assertEqual(len(after_ai["moveHistory"]), 1)
+
+        undone = service.undo_last_turn()
+        self.assertEqual(undone["moveHistory"], [])
+        self.assertTrue(undone["resumeAvailable"])
+
+        resumed = service.resume_game()
+        self.assertEqual(resumed["playerColor"], "black")
+        self.assertEqual(resumed["difficulty"], "easy")
+        self.assertEqual(resumed["timeMode"], "bullet")
 
     def test_finished_game_writes_records_and_updates_learning(self) -> None:
         service = ChessService(self.test_dir)
@@ -74,6 +100,11 @@ class ChessServiceTests(unittest.TestCase):
         reloaded = ChessService(self.test_dir)
         bias = reloaded.learning_memory.bias_for("legal", ["mode:legal", "piece:queen", "checkmate-pattern"])
         self.assertGreater(bias, 0.0)
+
+        listing = reloaded.get_state()["savedGameList"]
+        self.assertEqual(len(listing), 1)
+        replay = reloaded.load_record(listing[0]["file"])
+        self.assertGreaterEqual(len(replay["replay"]["snapshots"]), 2)
 
 
 if __name__ == "__main__":
