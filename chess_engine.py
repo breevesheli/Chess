@@ -274,6 +274,7 @@ class GameState:
     move_stack: List[Move] = field(default_factory=list)
     san_history: List[str] = field(default_factory=list)
     position_counts: Dict[str, int] = field(default_factory=dict)
+    _king_pos: Dict[str, Optional[Tuple[int, int]]] = field(default_factory=dict)
     result: str = "*"
     winner: Optional[str] = None
     outcome_reason: Optional[str] = None
@@ -313,6 +314,7 @@ class GameState:
         self.winner = None
         self.outcome_reason = None
         self.last_move = None
+        self._king_pos = {WHITE: (7, 4), BLACK: (0, 4)}
         self.record_position()
 
     def clone(self) -> "GameState":
@@ -333,6 +335,7 @@ class GameState:
             winner=self.winner,
             outcome_reason=self.outcome_reason,
             last_move=self.last_move.clone() if self.last_move else None,
+            _king_pos=self._king_pos.copy(),
         )
 
     def piece_at(self, row: int, col: int) -> Optional[Piece]:
@@ -382,10 +385,14 @@ class GameState:
         self.position_counts[key] = self.position_counts.get(key, 0) + 1
 
     def king_position(self, color: str) -> Optional[Tuple[int, int]]:
+        cached = self._king_pos.get(color)
+        if cached is not None:
+            return cached
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 piece = self.board[row][col]
                 if piece and piece.color == color and piece.kind == "king":
+                    self._king_pos[color] = (row, col)
                     return row, col
         return None
 
@@ -687,6 +694,7 @@ class GameState:
         self.board[move.to_row][move.to_col] = placed_piece
 
         if piece.kind == "king":
+            self._king_pos[piece.color] = (move.to_row, move.to_col)
             self.castling_rights[piece.color]["king"] = False
             self.castling_rights[piece.color]["queen"] = False
         elif piece.kind == "rook":
@@ -911,11 +919,18 @@ class ChessAI:
     def __init__(self, learning_memory: LearningMemory):
         self.learning_memory = learning_memory
 
-    def choose_move(self, state: GameState, color: str, mode: str) -> Optional[AiDecision]:
+    def choose_move(
+        self,
+        state: GameState,
+        color: str,
+        mode: str,
+        depth_override: int | None = None,
+        temperature: float = 220.0,
+    ) -> Optional[AiDecision]:
         moves = self._candidate_moves(state, color, color, mode)
         if not moves:
             return None
-        depth = 3 if len(moves) <= 12 or state.remaining_pieces() <= 10 else 2
+        depth = depth_override if depth_override is not None else (3 if len(moves) <= 12 or state.remaining_pieces() <= 10 else 2)
         scored: List[Tuple[Move, float, float, float, List[str]]] = []
         ordered_moves = self._order_moves(state, moves, color)
         for move in ordered_moves:
@@ -928,7 +943,7 @@ class ChessAI:
             learned_bias = self.learning_memory.bias_for(mode, features)
             total_score = raw_score + learned_bias
             scored.append((move.clone(), total_score, raw_score, learned_bias, features))
-        probabilities = self._softmax([score for _, score, _, _, _ in scored], temperature=220.0)
+        probabilities = self._softmax([score for _, score, _, _, _ in scored], temperature=temperature)
         candidates = [
             AiCandidate(
                 move=move,
