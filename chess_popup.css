@@ -1,0 +1,271 @@
+body {
+  margin: 0;
+  background: #13232f;
+  color: #edf4f7;
+  font-family: Georgia, serif;
+  overflow: hidden;
+}
+
+#app-shell {
+  width: 1000px;
+  margin: 14px auto;
+}
+
+#board-column {
+  float: left;
+  width: 650px;
+}
+
+#board-frame {
+  background: #0f1a22;
+  border: 1px solid #31495a;
+  padding: 18px 18px 12px 12px;
+  overflow: hidden;
+}
+
+#rank-labels {
+  float: left;
+  width: 24px;
+  margin-top: 1px;
+}
+
+#rank-labels div {
+  height: 72px;
+  line-height: 72px;
+  text-align: center;
+  color: #b7cbd6;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+}
+
+#board {
+  float: left;
+  width: 576px;
+  height: 576px;
+  border: 2px solid #d9d4c8;
+  font-size: 0;
+}
+
+#file-labels {
+  margin-left: 36px;
+  width: 576px;
+  padding-top: 8px;
+}
+
+#file-labels span {
+  display: inline-block;
+  width: 72px;
+  text-align: center;
+  color: #b7cbd6;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+}
+
+.square {
+  display: inline-block;
+  width: 72px;
+  height: 72px;
+  position: relative;
+  vertical-align: top;
+  cursor: pointer;
+}
+
+.square.light {
+  background: #f2f2f2;
+}
+
+.square.dark {
+  background: #202020;
+}
+
+.square.selected {
+  background: #3f6fa3;
+}
+
+.square.last-light {
+  background: #ccb56b;
+}
+
+.square.last-dark {
+  background: #826b2b;
+}
+
+.square.check {
+  background: #9b2f2f;
+}
+
+.piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 72px;
+  height: 72px;
+  line-height: 72px;
+  text-align: center;
+  font-family: "Segoe UI Symbol", "Arial Unicode MS", serif;
+  font-size: 46px;
+}
+
+.piece.white {
+  color: #f7f4eb;
+  text-shadow: 2px 2px 0 #111111;
+}
+
+.piece.black {
+  color: #0e1820;
+  text-shadow: 2px 2px 0 #f0e1c2;
+}
+
+.indicator-dot {
+  position: absolute;
+  left: 26px;
+  top: 26px;
+  width: 20px;
+  height: 20px;
+  background: #48b36f;
+  border-radius: 10px;
+}
+
+.indicator-ring {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 42px;
+  height: 42px;
+  border: 4px solid #de4b4b;
+  border-radius: 25px;
+}
+
+#side-panel {
+  float: right;
+  width: 320px;
+  background: #173344;
+  padding: 16px;
+  border: 1px solid #2f566d;
+}
+
+.panel-title {
+  font-family: Bahnschrift, "Segoe UI", sans-serif;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.panel-subtitle {
+  margin-top: 4px;
+  margin-bottom: 14px;
+  color: #b7cbd6;
+  font-size: 14px;
+}
+
+.card {
+  background: #21485d;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-family: Bahnschrift, "Segoe UI", sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.radio-row {
+  display: block;
+  margin: 6px 0;
+  font-size: 16px;
+}
+
+.radio-row input {
+  margin-right: 8px;
+}
+
+#play-button,
+.small-button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #d98f2b;
+  color: #101820;
+  cursor: pointer;
+  font-family: Bahnschrift, "Segoe UI", sans-serif;
+  font-size: 28px;
+  font-weight: bold;
+  padding: 12px 0;
+  margin-bottom: 14px;
+}
+
+.small-button {
+  font-size: 18px;
+  padding: 10px 0;
+  margin-bottom: 8px;
+}
+
+.cancel-button {
+  background: #b8c4ca;
+}
+
+.status-text {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.thought-text,
+.record-summary {
+  color: #b7cbd6;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.record-summary {
+  margin-bottom: 12px;
+}
+
+.scroll-panel {
+  background: #10232f;
+  color: #edf4f7;
+  border: 1px solid #315a70;
+  height: 180px;
+  overflow-y: auto;
+  padding: 8px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.insight-panel {
+  height: 120px;
+  font-family: Georgia, serif;
+}
+
+.modal {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  filter: alpha(opacity=78);
+}
+
+.modal-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 290px;
+  margin-left: -145px;
+  margin-top: -160px;
+  background: #173344;
+  border: 1px solid #537286;
+  padding: 16px;
+  filter: alpha(opacity=100);
+}
+
+.modal-subtitle {
+  margin-bottom: 12px;
+  color: #b7cbd6;
+}
+
+.hidden {
+  display: none;
+}

@@ -49,6 +49,26 @@ class ChessEngineTests(unittest.TestCase):
         illegal_uci = {move.uci() for move in moves if move.is_illegal}
         self.assertIn("c1h6", illegal_uci)
 
+    def test_illegal_bot_still_cannot_capture_king(self) -> None:
+        state = GameState.empty()
+        state.board = [[None for _ in range(8)] for _ in range(8)]
+        state.set_piece(7, 4, Piece(WHITE, "king"))
+        state.set_piece(0, 4, Piece(BLACK, "king"))
+        state.set_piece(1, 4, Piece(WHITE, "queen"))
+        illegal_moves = state.generate_illegal_bot_moves(WHITE)
+        self.assertNotIn("e7e8", {move.uci() for move in illegal_moves})
+
+    def test_promotion_notation_uses_equals(self) -> None:
+        state = GameState.empty()
+        state.board = [[None for _ in range(8)] for _ in range(8)]
+        state.set_piece(7, 4, Piece(WHITE, "king"))
+        state.set_piece(0, 4, Piece(BLACK, "king"))
+        state.set_piece(1, 0, Piece(WHITE, "pawn"))
+        state.turn = WHITE
+        move = next(candidate for candidate in state.generate_legal_moves(WHITE) if candidate.uci() == "a7a8q")
+        played = state.play_move(move)
+        self.assertEqual(played.san, "a8=Q+")
+
 
 if __name__ == "__main__":
     unittest.main()

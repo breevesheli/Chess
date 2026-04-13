@@ -1,0 +1,112 @@
+<html>
+<head>
+  <title>Chess Popup</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=11" />
+  <hta:application
+    id="ChessPopup"
+    applicationname="Chess Popup"
+    border="thin"
+    caption="yes"
+    contextmenu="no"
+    maximizebutton="no"
+    minimizebutton="yes"
+    navigable="yes"
+    scroll="no"
+    selection="no"
+    showintaskbar="yes"
+    singleinstance="no"
+    sysmenu="yes"
+    windowstate="normal"
+  />
+  <link rel="stylesheet" type="text/css" href="/chess_popup.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <div id="board-column">
+      <div id="board-frame">
+        <div id="rank-labels">
+          <div>8</div>
+          <div>7</div>
+          <div>6</div>
+          <div>5</div>
+          <div>4</div>
+          <div>3</div>
+          <div>2</div>
+          <div>1</div>
+        </div>
+        <div id="board"></div>
+      </div>
+      <div id="file-labels">
+        <span>a</span>
+        <span>b</span>
+        <span>c</span>
+        <span>d</span>
+        <span>e</span>
+        <span>f</span>
+        <span>g</span>
+        <span>h</span>
+      </div>
+    </div>
+
+    <div id="side-panel">
+      <div class="panel-title">Chess Popup</div>
+      <div class="panel-subtitle">A1 is the dark square at the bottom-left.</div>
+
+      <div class="card">
+        <div class="card-title">Bot Mode</div>
+        <label class="radio-row">
+          <input type="radio" name="bot-mode" value="legal" checked="checked" />
+          <span>Legal Bot</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="bot-mode" value="illegal" />
+          <span>Illegal Bot</span>
+        </label>
+      </div>
+
+      <button id="play-button" type="button">Play</button>
+
+      <div class="card">
+        <div class="card-title">Play As</div>
+        <label class="radio-row">
+          <input type="radio" name="player-color" value="white" checked="checked" />
+          <span>White Pieces</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="player-color" value="black" />
+          <span>Black Pieces</span>
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Status</div>
+        <div id="status-text" class="status-text">Choose your settings and press Play.</div>
+        <div id="thought-text" class="thought-text">The board opens in standard chess setup.</div>
+      </div>
+
+      <div id="record-summary" class="record-summary"></div>
+
+      <div class="card">
+        <div class="card-title">Game Record</div>
+        <div id="move-history" class="scroll-panel">No moves yet.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">AI Notes</div>
+        <div id="ai-insight" class="scroll-panel insight-panel">Top move probabilities will appear here after the bot moves.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="promotion-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="card-title">Choose Promotion</div>
+      <div class="modal-subtitle">Promote your pawn to:</div>
+      <div id="promotion-buttons"></div>
+      <button id="promotion-cancel" type="button" class="small-button cancel-button">Cancel</button>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="/chess_popup.js"></script>
+</body>
+</html>

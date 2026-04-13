@@ -3,6 +3,3 @@ __pycache__/
 *.pyo
 *.log
 bot_learning.json
-game_records/*.json
-game_records/*.pgn
-!game_records/.gitkeep
