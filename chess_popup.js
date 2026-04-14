@@ -6,8 +6,10 @@
   var aiPending = false;
   var promotionContext = null;
   var lastHint = null;
-  var refreshTimer = null;
   var dismissedResultKey = "";
+  var setupDirty = false;
+  var clockTimer = null;
+  var clockAnchorMs = 0;
 
   var PROMOTION_ORDER = ["queen", "rook", "bishop", "knight"];
   var PROMOTION_LABELS = {
@@ -23,6 +25,14 @@
     bishop: "B",
     knight: "N",
     pawn: "P"
+  };
+  var CLASSIC_PIECES = {
+    king: "\u265A",
+    queen: "\u265B",
+    rook: "\u265C",
+    bishop: "\u265D",
+    knight: "\u265E",
+    pawn: "\u265F"
   };
 
   function byId(id) {
@@ -86,6 +96,77 @@
     for (index = 0; index < items.length; index += 1) {
       items[index].checked = items[index].value === value;
     }
+  }
+
+  function parseIntegerValue(value, fallback) {
+    var parsed = parseInt(value, 10);
+    return isNaN(parsed) ? fallback : parsed;
+  }
+
+  function formatClockSeconds(totalSeconds) {
+    var seconds = Math.max(0, Math.round(totalSeconds));
+    var minutes = Math.floor(seconds / 60);
+    var remainingSeconds = seconds % 60;
+    var hours;
+    if (minutes >= 60) {
+      hours = Math.floor(minutes / 60);
+      minutes = minutes % 60;
+      return hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (remainingSeconds < 10 ? "0" : "") + remainingSeconds;
+    }
+    return minutes + ":" + (remainingSeconds < 10 ? "0" : "") + remainingSeconds;
+  }
+
+  function currentSetupDraft() {
+    return {
+      playerColor: getSelectedValue("player-color"),
+      botMode: getSelectedValue("bot-mode"),
+      difficulty: byId("difficulty").value,
+      illegalPersonality: byId("illegal-personality").value,
+      theme: byId("theme").value,
+      pieceSet: byId("piece-set").value,
+      autoFlip: byId("auto-flip").checked,
+      timeMode: byId("time-mode").value,
+      customMinutes: byId("custom-minutes").value,
+      customIncrement: byId("custom-increment").value
+    };
+  }
+
+  function currentSetupDraftFromState() {
+    if (!state) {
+      return null;
+    }
+    return {
+      playerColor: state.playerColor,
+      botMode: state.botMode,
+      difficulty: state.difficulty,
+      illegalPersonality: state.illegalPersonality,
+      theme: state.theme,
+      pieceSet: state.pieceSet,
+      autoFlip: state.autoFlip,
+      timeMode: state.timeMode,
+      customMinutes: String(state.customMinutes),
+      customIncrement: String(state.customIncrement)
+    };
+  }
+
+  function applySetupDraft(draft) {
+    if (!draft) {
+      return;
+    }
+    setSelectedValue("bot-mode", draft.botMode);
+    setSelectedValue("player-color", draft.playerColor);
+    byId("difficulty").value = draft.difficulty;
+    byId("illegal-personality").value = draft.illegalPersonality;
+    byId("theme").value = draft.theme;
+    byId("piece-set").value = draft.pieceSet;
+    byId("time-mode").value = draft.timeMode;
+    byId("custom-minutes").value = draft.customMinutes;
+    byId("custom-increment").value = draft.customIncrement;
+    byId("auto-flip").checked = draft.autoFlip;
+  }
+
+  function markSetupDirty() {
+    setupDirty = true;
   }
 
   function currentDisplay() {
@@ -187,7 +268,7 @@
     if (pieceSet === "letters") {
       return piece.color === "white" ? PIECE_LETTERS[piece.kind] : PIECE_LETTERS[piece.kind].toLowerCase();
     }
-    return piece.glyph;
+    return CLASSIC_PIECES[piece.kind] || piece.glyph;
   }
 
   function buildTargetMap() {
@@ -423,6 +504,15 @@
 
   function renderCaptured() {
     var view = currentDisplay();
+    var top = byId("captured-top");
+    var bottom = byId("captured-bottom");
+    if (!view || !view.captured) {
+      top.innerText = "";
+      bottom.innerText = "";
+      top.className = "captured-strip empty";
+      bottom.className = "captured-strip empty";
+      return;
+    }
     var byWhite = [];
     var byBlack = [];
     var index;
@@ -432,24 +522,63 @@
     for (index = 0; index < view.captured.byBlack.length; index += 1) {
       byBlack.push(pieceGlyph(view.captured.byBlack[index]));
     }
-    byId("captured-white").innerText = byWhite.join(" ") || "None";
-    byId("captured-black").innerText = byBlack.join(" ") || "None";
+    // Dead pieces display next to the side that lost them. If the board is
+    // flipped (user is playing Black), top/bottom swap accordingly.
+    var topGlyphs = boardFlipped() ? byBlack : byWhite;
+    var bottomGlyphs = boardFlipped() ? byWhite : byBlack;
+    top.innerText = topGlyphs.join(" ");
+    bottom.innerText = bottomGlyphs.join(" ");
+    top.className = "captured-strip" + (topGlyphs.length === 0 ? " empty" : "");
+    bottom.className = "captured-strip" + (bottomGlyphs.length === 0 ? " empty" : "");
+  }
+
+  function activeClockPayload() {
+    var elapsedSeconds;
+    var activeColor;
+    var clock;
+    if (!state || !state.clock) {
+      return null;
+    }
+    clock = {
+      white: state.clock.white,
+      black: state.clock.black,
+      activeColor: state.clock.activeColor || ""
+    };
+    activeColor = clock.activeColor;
+    if (state.gameActive && state.result === "*" && activeColor && clockAnchorMs > 0) {
+      elapsedSeconds = Math.max(0, (new Date().getTime() - clockAnchorMs) / 1000);
+      clock[activeColor] = Math.max(0, clock[activeColor] - elapsedSeconds);
+    }
+    clock.whiteText = formatClockSeconds(clock.white);
+    clock.blackText = formatClockSeconds(clock.black);
+    return clock;
+  }
+
+  function restartClockTimer() {
+    // The UI used to tick the clock once per second, which caused visible
+    // re-renders every tick. State is now refreshed only when the user
+    // starts a game or makes a move, so this is intentionally a no-op.
+    if (clockTimer) {
+      window.clearInterval(clockTimer);
+      clockTimer = null;
+    }
   }
 
   function renderClock() {
     var white = byId("white-clock");
     var black = byId("black-clock");
-    if (!state || !state.clock) {
+    var clock = activeClockPayload();
+    if (!clock) {
       white.innerText = "White: unlimited";
       black.innerText = "Black: unlimited";
       white.className = "clock-box";
       black.className = "clock-box";
       return;
     }
-    white.innerText = "White  " + state.clock.whiteText;
-    black.innerText = "Black  " + state.clock.blackText;
-    white.className = "clock-box" + (state.clock.activeColor === "white" ? " active" : "");
-    black.className = "clock-box" + (state.clock.activeColor === "black" ? " active" : "");
+    white.innerText = "White  " + clock.whiteText;
+    black.innerText = "Black  " + clock.blackText;
+    white.className = "clock-box" + (clock.activeColor === "white" ? " active" : "");
+    black.className = "clock-box" + (clock.activeColor === "black" ? " active" : "");
   }
 
   function renderSavedGames() {
@@ -541,31 +670,26 @@
   }
 
   function syncControlsFromState() {
-    if (!state) {
+    var draft;
+    if (!state || setupDirty) {
       return;
     }
-    setSelectedValue("bot-mode", state.botMode);
-    setSelectedValue("player-color", state.playerColor);
-    byId("difficulty").value = state.difficulty;
-    byId("illegal-personality").value = state.illegalPersonality;
-    byId("theme").value = state.theme;
-    byId("piece-set").value = state.pieceSet;
-    byId("time-mode").value = state.timeMode;
-    byId("custom-minutes").value = state.customMinutes;
-    byId("custom-increment").value = state.customIncrement;
-    byId("auto-flip").checked = state.autoFlip;
+    draft = currentSetupDraftFromState();
+    applySetupDraft(draft);
   }
 
-  function scheduleRefresh() {
-    if (refreshTimer) {
-      window.clearTimeout(refreshTimer);
+  function applyStatePayload(payload, clearSetupDraft) {
+    state = payload;
+    clockAnchorMs = new Date().getTime();
+    if (clearSetupDraft) {
+      setupDirty = false;
     }
-    refreshTimer = window.setTimeout(function () {
-      if (!state || isReplayMode()) {
-        return;
-      }
-      refreshState();
-    }, state && state.gameActive ? 1000 : 3000);
+    syncControlsFromState();
+    renderAll();
+    restartClockTimer();
+    if (!isReplayMode() && state.aiToMove && !aiPending) {
+      window.setTimeout(triggerAiMove, 300);
+    }
   }
 
   function refreshState(callback) {
@@ -575,32 +699,27 @@
         byId("thought-text").innerText = "Check that the local Chess Popup server is running.";
         return;
       }
-      state = payload;
-      syncControlsFromState();
-      renderAll();
+      applyStatePayload(payload, false);
       if (callback) {
         callback();
       }
-      if (!isReplayMode() && state.aiToMove && !aiPending) {
-        window.setTimeout(triggerAiMove, 300);
-      }
-      scheduleRefresh();
     });
   }
 
   function currentStartPayload() {
+    var draft = currentSetupDraft();
     return {
-      playerColor: getSelectedValue("player-color"),
-      botMode: getSelectedValue("bot-mode"),
-      difficulty: byId("difficulty").value,
-      illegalPersonality: byId("illegal-personality").value,
-      theme: byId("theme").value,
-      pieceSet: byId("piece-set").value,
-      autoFlip: byId("auto-flip").checked,
+      playerColor: draft.playerColor,
+      botMode: draft.botMode,
+      difficulty: draft.difficulty,
+      illegalPersonality: draft.illegalPersonality,
+      theme: draft.theme,
+      pieceSet: draft.pieceSet,
+      autoFlip: draft.autoFlip,
       muted: state ? state.muted : false,
-      timeMode: byId("time-mode").value,
-      customMinutes: parseInt(byId("custom-minutes").value || "10", 10),
-      customIncrement: parseInt(byId("custom-increment").value || "0", 10)
+      timeMode: draft.timeMode,
+      customMinutes: parseIntegerValue(draft.customMinutes || "10", 10),
+      customIncrement: parseIntegerValue(draft.customIncrement || "0", 10)
     };
   }
 
@@ -616,13 +735,7 @@
         alert(error);
         return;
       }
-      state = payload;
-      syncControlsFromState();
-      renderAll();
-      scheduleRefresh();
-      if (state.aiToMove) {
-        window.setTimeout(triggerAiMove, 300);
-      }
+      applyStatePayload(payload, true);
     });
   }
 
@@ -635,17 +748,12 @@
       replay = null;
       replayIndex = 0;
       dismissedResultKey = "";
-      state = payload;
-      syncControlsFromState();
-      renderAll();
-      scheduleRefresh();
-      if (state.aiToMove) {
-        window.setTimeout(triggerAiMove, 300);
-      }
+      applyStatePayload(payload, true);
     });
   }
 
   function sendPreferences() {
+    markSetupDirty();
     request(
       "POST",
       "/api/preferences",
@@ -657,9 +765,7 @@
       },
       function (error, payload) {
         if (!error) {
-          state = payload;
-          renderAll();
-          scheduleRefresh();
+          applyStatePayload(payload, false);
         }
       }
     );
@@ -681,12 +787,7 @@
           refreshState();
           return;
         }
-        state = payload;
-        renderAll();
-        scheduleRefresh();
-        if (state.aiToMove) {
-          window.setTimeout(triggerAiMove, 300);
-        }
+        applyStatePayload(payload, false);
       }
     );
   }
@@ -704,9 +805,7 @@
         refreshState();
         return;
       }
-      state = payload;
-      renderAll();
-      scheduleRefresh();
+      applyStatePayload(payload, false);
     });
   }
 
@@ -722,12 +821,7 @@
       if (path === "/api/restart") {
         dismissedResultKey = "";
       }
-      state = payload;
-      renderAll();
-      scheduleRefresh();
-      if (state.aiToMove) {
-        window.setTimeout(triggerAiMove, 300);
-      }
+      applyStatePayload(payload, path === "/api/restart");
     });
   }
 
@@ -752,6 +846,7 @@
       replayIndex = 0;
       selectedSquare = null;
       renderAll();
+      restartClockTimer();
     });
   }
 
@@ -767,6 +862,10 @@
     replay = null;
     replayIndex = 0;
     renderAll();
+    restartClockTimer();
+    if (state && state.aiToMove && !aiPending) {
+      window.setTimeout(triggerAiMove, 300);
+    }
   }
 
   function toggleMute() {
@@ -776,8 +875,7 @@
     state.muted = !state.muted;
     request("POST", "/api/preferences", { muted: state.muted }, function (error, payload) {
       if (!error) {
-        state = payload;
-        renderAll();
+        applyStatePayload(payload, false);
       }
     });
   }
@@ -897,6 +995,9 @@
   }
 
   function init() {
+    var botModeItems;
+    var playerColorItems;
+    var index;
     byId("play-button").onclick = startGame;
     byId("resume-button").onclick = resumeGame;
     byId("undo-button").onclick = function () { callGameAction("/api/undo"); };
@@ -916,6 +1017,19 @@
     byId("promotion-buttons").onclick = promotionClickHandler;
     byId("promotion-cancel").onclick = hidePromotionModal;
     byId("saved-games").onclick = savedGameClickHandler;
+    botModeItems = document.getElementsByName("bot-mode");
+    for (index = 0; index < botModeItems.length; index += 1) {
+      botModeItems[index].onclick = markSetupDirty;
+    }
+    playerColorItems = document.getElementsByName("player-color");
+    for (index = 0; index < playerColorItems.length; index += 1) {
+      playerColorItems[index].onclick = markSetupDirty;
+    }
+    byId("difficulty").onchange = markSetupDirty;
+    byId("illegal-personality").onchange = markSetupDirty;
+    byId("time-mode").onchange = markSetupDirty;
+    byId("custom-minutes").oninput = markSetupDirty;
+    byId("custom-increment").oninput = markSetupDirty;
     byId("theme").onchange = sendPreferences;
     byId("piece-set").onchange = sendPreferences;
     byId("auto-flip").onclick = sendPreferences;

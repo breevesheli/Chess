@@ -191,27 +191,47 @@ body.theme-slate .square.dark {
   top: 0;
   width: var(--square-size);
   height: var(--square-size);
-  line-height: var(--square-size);
-  text-align: center;
-  font-family: "Segoe UI Symbol", "Arial Unicode MS", serif;
-  font-size: 46px;
-  animation: piece-pop 0.16s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Segoe UI Symbol", "Arial Unicode MS", "Noto Sans Symbols 2", serif;
+  font-size: 52px;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .piece.white {
-  color: #f7f4eb;
-  text-shadow: 2px 2px 0 #111111;
+  color: #ffffff;
+  text-shadow:
+    0 0 2px #000000,
+    0 0 3px #000000,
+    1px 1px 0 #000000,
+    -1px -1px 0 #000000,
+    1px -1px 0 #000000,
+    -1px 1px 0 #000000,
+    0 2px 4px rgba(0, 0, 0, 0.6);
+  -webkit-text-stroke: 2px #000000;
 }
 
 .piece.black {
-  color: #0e1820;
-  text-shadow: 2px 2px 0 #f0e1c2;
+  color: #0a0a0a;
+  text-shadow:
+    0 0 2px #ffffff,
+    0 0 3px #ffffff,
+    1px 1px 0 #ffffff,
+    -1px -1px 0 #ffffff,
+    1px -1px 0 #ffffff,
+    -1px 1px 0 #ffffff,
+    0 2px 4px rgba(0, 0, 0, 0.5);
+  -webkit-text-stroke: 1.5px #ffffff;
 }
 
 .piece-set-letters {
   font-family: Consolas, monospace;
-  font-size: 34px;
+  font-size: 36px;
   font-weight: bold;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
 }
 
 @keyframes piece-pop {
@@ -422,6 +442,27 @@ body.theme-slate .card {
   background: #10232f;
   border: 1px solid #315a70;
   font-size: 24px;
+}
+
+.captured-strip {
+  min-height: 32px;
+  padding: 4px 10px;
+  margin: 6px 0;
+  background: #10232f;
+  border: 1px solid #315a70;
+  border-radius: 4px;
+  font-size: 26px;
+  line-height: 1;
+  color: #cfe2ef;
+  letter-spacing: 2px;
+}
+
+.captured-strip:empty::before,
+.captured-strip.empty {
+  content: "None";
+  color: #5f7d8e;
+  font-size: 12px;
+  letter-spacing: 0;
 }
 
 .scroll-panel {

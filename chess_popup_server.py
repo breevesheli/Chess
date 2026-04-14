@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import threading
 import time
-from typing import Any
+from typing import Any, Dict, List, Tuple
 from urllib.parse import urlparse
 
 try:  # pragma: no cover - Windows only
@@ -50,6 +50,47 @@ DIFFICULTY_PROFILES = {
     "medium": {"depth": 2, "temperature": 220.0},
     "hard": {"depth": 3, "temperature": 95.0},
 }
+
+VALID_DIFFICULTIES = set(DIFFICULTY_PROFILES.keys()) | {"auto"}
+
+
+def _auto_profile_for_rating(rating: int) -> Dict[str, Any]:
+    """Map a player's ELO-ish rating to a difficulty profile.
+
+    Below 1000 plays like easy, 1000-1400 like medium, 1400-1700 splits
+    the difference between medium and hard, and 1700+ plays full hard.
+    """
+    rating = int(rating)
+    if rating < 1000:
+        return {"depth": 1, "temperature": 460.0}
+    if rating < 1200:
+        return {"depth": 2, "temperature": 320.0}
+    if rating < 1400:
+        return {"depth": 2, "temperature": 220.0}
+    if rating < 1600:
+        return {"depth": 2, "temperature": 150.0}
+    if rating < 1800:
+        return {"depth": 3, "temperature": 120.0}
+    return {"depth": 3, "temperature": 80.0}
+
+
+def _load_opening_book_overlay(data_dir: Path) -> Dict[Tuple[str, Tuple[str, ...]], List[str]]:
+    """Read opening_book.json (if present) and merge into the hardcoded book."""
+    path = data_dir / "opening_book.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    overlay: Dict[Tuple[str, Tuple[str, ...]], List[str]] = {}
+    for item in payload.get("entries", []):
+        color = str(item.get("color", ""))
+        san_history = tuple(str(s) for s in item.get("san_history", []))
+        moves = [str(m) for m in item.get("moves", []) if m]
+        if color in (WHITE, BLACK) and moves:
+            overlay[(color, san_history)] = moves
+    return overlay
 
 PIECE_ORDER = ["queen", "rook", "bishop", "knight", "pawn"]
 STARTING_PIECES = {
@@ -117,7 +158,11 @@ class ChessService:
         self.ai = ChessAI(self.learning_memory)
         self.lock = threading.RLock()
         self.stats = self._load_stats()
+        self.opening_book_overlay = _load_opening_book_overlay(self.data_dir)
         self.reset_preview()
+
+    def reload_opening_book_overlay(self) -> None:
+        self.opening_book_overlay = _load_opening_book_overlay(self.data_dir)
 
     def reset_preview(self) -> None:
         self.state = GameState.initial()
@@ -164,8 +209,8 @@ class ChessService:
                 raise ValueError("Player color must be white or black.")
             if bot_mode not in ("legal", "illegal"):
                 raise ValueError("Bot mode must be legal or illegal.")
-            if difficulty not in DIFFICULTY_PROFILES:
-                raise ValueError("Difficulty must be easy, medium, or hard.")
+            if difficulty not in VALID_DIFFICULTIES:
+                raise ValueError("Difficulty must be easy, medium, hard, or auto.")
             if illegal_personality not in ("standard", "chaotic", "greedy", "sneaky"):
                 raise ValueError("Invalid Illegal Bot personality.")
             if time_mode not in ("unlimited", "bullet", "blitz", "rapid", "custom"):
@@ -341,7 +386,7 @@ class ChessService:
                     self._persist_autosave()
                 return self._state_payload()
 
-            profile = DIFFICULTY_PROFILES[self.difficulty].copy()
+            profile = self._resolve_difficulty_profile().copy()
             if self.bot_mode == "illegal":
                 if self.illegal_personality == "chaotic":
                     profile["depth"] = max(1, profile["depth"] - 1)
@@ -525,10 +570,17 @@ class ChessService:
                 return move
         raise ValueError("Invalid promotion choice.")
 
+    def _resolve_difficulty_profile(self) -> Dict[str, Any]:
+        if self.difficulty == "auto":
+            rating = int(self.stats.get("rating", 1200))
+            return _auto_profile_for_rating(rating)
+        return DIFFICULTY_PROFILES[self.difficulty]
+
     def _opening_book_move(self, bot_color: str) -> Move | None:
-        if self.bot_mode != "legal" or len(self.state.move_stack) >= 6:
+        if self.bot_mode != "legal" or len(self.state.move_stack) >= 12:
             return None
-        choices = OPENING_BOOK.get((bot_color, tuple(self.state.san_history)), [])
+        key = (bot_color, tuple(self.state.san_history))
+        choices = self.opening_book_overlay.get(key) or OPENING_BOOK.get(key, [])
         if not choices:
             return None
         legal_moves = self.state.generate_legal_moves(bot_color)

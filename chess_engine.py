@@ -31,12 +31,12 @@ PIECE_TO_FEN = {
 }
 
 UNICODE_PIECES = {
-    (WHITE, "king"): "\u2654",
-    (WHITE, "queen"): "\u2655",
-    (WHITE, "rook"): "\u2656",
-    (WHITE, "bishop"): "\u2657",
-    (WHITE, "knight"): "\u2658",
-    (WHITE, "pawn"): "\u2659",
+    (WHITE, "king"): "\u265A",
+    (WHITE, "queen"): "\u265B",
+    (WHITE, "rook"): "\u265C",
+    (WHITE, "bishop"): "\u265D",
+    (WHITE, "knight"): "\u265E",
+    (WHITE, "pawn"): "\u265F",
     (BLACK, "king"): "\u265A",
     (BLACK, "queen"): "\u265B",
     (BLACK, "rook"): "\u265C",

@@ -13,11 +13,13 @@
         <div id="white-clock" class="clock-box">White: unlimited</div>
         <div id="black-clock" class="clock-box">Black: unlimited</div>
       </div>
+      <div id="captured-top" class="captured-strip">None</div>
       <div id="board-frame">
         <div id="rank-labels"></div>
         <div id="board"></div>
       </div>
       <div id="file-labels"></div>
+      <div id="captured-bottom" class="captured-strip">None</div>
     </div>
 
     <div id="side-panel">
@@ -39,6 +41,7 @@
           <option value="easy">Easy</option>
           <option value="medium" selected="selected">Medium</option>
           <option value="hard">Hard</option>
+          <option value="auto">Auto (match your rating)</option>
         </select>
         <div class="field-label">Illegal Personality</div>
         <select id="illegal-personality" class="select-box">
@@ -129,12 +132,6 @@
       </div>
 
       <div id="record-summary" class="record-summary"></div>
-
-      <div class="card">
-        <div class="card-title">Captured Pieces</div>
-        <div class="capture-row"><span>By White</span><div id="captured-white" class="capture-panel">None</div></div>
-        <div class="capture-row"><span>By Black</span><div id="captured-black" class="capture-panel">None</div></div>
-      </div>
 
       <div class="card">
         <div class="card-title">Game Record</div>
