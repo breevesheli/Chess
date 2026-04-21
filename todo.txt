@@ -1,9 +1,0 @@
-Core chess app prompt completed.
-
-Optional ideas to add after the core app is finished:
-
-1. Load and replay standalone .pgn files directly from game_records without relying on the matching .json record.
-2. Add endgame shortcut logic for simple endgames.
-3. Let the bot self-play in the background to improve its learning data faster.
-4. Add a board editor with FEN import and export.
-5. Package the whole project as a single Windows .exe instead of script-based launch files.

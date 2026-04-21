@@ -2,156 +2,412 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chess Popup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" type="text/css" href="/chess_popup.css" />
 </head>
 <body class="theme-classic">
+  <canvas id="background-canvas" aria-hidden="true"></canvas>
+  <div id="surface-texture" aria-hidden="true"></div>
+
   <div id="app-shell">
-    <div id="board-column">
-      <div id="banner" class="banner hidden"></div>
-      <div id="clock-row">
-        <div id="white-clock" class="clock-box">White: unlimited</div>
-        <div id="black-clock" class="clock-box">Black: unlimited</div>
-      </div>
-      <div id="captured-top" class="captured-strip">None</div>
-      <div id="board-frame">
-        <div id="rank-labels"></div>
-        <div id="board"></div>
-      </div>
-      <div id="file-labels"></div>
-      <div id="captured-bottom" class="captured-strip">None</div>
-    </div>
-
-    <div id="side-panel">
-      <div class="panel-title">Chess Popup</div>
-      <div class="panel-subtitle">A1 is the dark square at the bottom-left.</div>
-
-      <div class="card">
-        <div class="card-title">Bot Mode</div>
-        <label class="radio-row">
-          <input type="radio" name="bot-mode" value="legal" checked="checked" />
-          <span>Legal Bot</span>
-        </label>
-        <label class="radio-row">
-          <input type="radio" name="bot-mode" value="illegal" />
-          <span>Illegal Bot</span>
-        </label>
-        <div class="field-label">Difficulty</div>
-        <select id="difficulty" class="select-box">
-          <option value="easy">Easy</option>
-          <option value="medium" selected="selected">Medium</option>
-          <option value="hard">Hard</option>
-          <option value="auto">Auto (match your rating)</option>
-        </select>
-        <div class="field-label">Illegal Personality</div>
-        <select id="illegal-personality" class="select-box">
-          <option value="standard">Standard</option>
-          <option value="chaotic">Chaotic</option>
-          <option value="greedy">Greedy</option>
-          <option value="sneaky">Sneaky</option>
-        </select>
+    <header id="top-bar">
+      <div class="topbar-cluster topbar-left">
+        <button id="left-drawer-toggle" class="topbar-icon drawer-toggle" type="button" aria-label="Open left panel">&#9776;</button>
+        <div id="brand-mark">&#9823; CHESS</div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Play As</div>
-        <label class="radio-row">
-          <input type="radio" name="player-color" value="white" checked="checked" />
-          <span>White Pieces</span>
-        </label>
-        <label class="radio-row">
-          <input type="radio" name="player-color" value="black" />
-          <span>Black Pieces</span>
-        </label>
+      <div class="topbar-center">
+        <div id="topbar-mode-label">Waiting...</div>
+        <div id="topbar-opening-name">Awaiting first move</div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Clock</div>
-        <div class="field-label">Mode</div>
-        <select id="time-mode" class="select-box">
-          <option value="unlimited">Unlimited</option>
-          <option value="bullet">Bullet</option>
-          <option value="blitz">Blitz</option>
-          <option value="rapid">Rapid</option>
-          <option value="custom">Custom</option>
-        </select>
-        <div class="split-fields">
-          <div>
-            <div class="field-label">Minutes</div>
-            <input id="custom-minutes" class="text-box" type="text" value="10" />
+      <div class="topbar-cluster topbar-right">
+        <div id="p2-turn-badge" class="top-badge hidden">P2 Turn</div>
+        <div id="topbar-user">&#128100; <span id="topbar-username">Player</span></div>
+        <button id="rename-button" class="topbar-icon" type="button" aria-label="Rename profile">&#9881;</button>
+        <button id="collection-button" class="topbar-icon" type="button" aria-label="Collection">&#127942;</button>
+        <button id="stats-button" class="topbar-icon" type="button" aria-label="Stats">&#128202;</button>
+        <button id="right-drawer-toggle" class="topbar-icon drawer-toggle" type="button" aria-label="Open right panel">&#9776;</button>
+      </div>
+    </header>
+
+    <div id="layout-shell">
+      <div id="panel-backdrop" class="panel-backdrop hidden"></div>
+
+      <aside id="left-panel" class="side-panel">
+        <div class="panel-scroll">
+          <section class="player-card" id="top-player-card">
+            <div class="player-header">
+              <div id="top-player-avatar" class="avatar-circle">LB</div>
+              <div class="player-meta">
+                <div id="top-player-name" class="player-name">Legal Bot</div>
+                <div id="top-player-role" class="player-role">Top side</div>
+              </div>
+            </div>
+            <div id="top-player-side" class="player-side-label">Black Pieces</div>
+            <div id="top-player-clock" class="player-clock">unlimited</div>
+          </section>
+
+          <div class="left-panel-block">
+            <div class="left-panel-label">Captured By Bottom Player</div>
+            <div id="captured-top" class="captured-strip">None</div>
           </div>
-          <div>
-            <div class="field-label">Increment</div>
-            <input id="custom-increment" class="text-box" type="text" value="0" />
+
+          <div id="top-reactions" class="reaction-row hidden">
+            <button type="button" class="reaction-button" data-emoji="&#128079;">&#128079;</button>
+            <button type="button" class="reaction-button" data-emoji="&#128548;">&#128548;</button>
+            <button type="button" class="reaction-button" data-emoji="&#129300;">&#129300;</button>
+            <button type="button" class="reaction-button" data-emoji="&#128514;">&#128514;</button>
+            <button type="button" class="reaction-button" data-emoji="&#128293;">&#128293;</button>
           </div>
+
+          <div class="left-panel-block">
+            <div class="left-panel-label">Opening</div>
+            <div id="opening-pill" class="opening-pill">Awaiting first move</div>
+          </div>
+
+          <div class="left-panel-block">
+            <div class="left-panel-label">Captured By Top Player</div>
+            <div id="captured-bottom" class="captured-strip">None</div>
+          </div>
+
+          <div id="bottom-reactions" class="reaction-row hidden">
+            <button type="button" class="reaction-button" data-emoji="&#128079;">&#128079;</button>
+            <button type="button" class="reaction-button" data-emoji="&#128548;">&#128548;</button>
+            <button type="button" class="reaction-button" data-emoji="&#129300;">&#129300;</button>
+            <button type="button" class="reaction-button" data-emoji="&#128514;">&#128514;</button>
+            <button type="button" class="reaction-button" data-emoji="&#128293;">&#128293;</button>
+          </div>
+
+          <section class="player-card player-card-bottom" id="bottom-player-card">
+            <div class="player-header">
+              <div id="bottom-player-avatar" class="avatar-circle">PL</div>
+              <div class="player-meta">
+                <div id="bottom-player-name" class="player-name">Player</div>
+                <div id="bottom-player-role" class="player-role">Bottom side</div>
+              </div>
+            </div>
+            <div id="bottom-player-side" class="player-side-label">White Pieces</div>
+            <div id="bottom-player-clock" class="player-clock">unlimited</div>
+          </section>
+
+          <section id="daily-widget" class="widget-card">
+            <div class="widget-header">
+              <div id="daily-widget-badge" class="widget-badge">&#9733;</div>
+              <div class="widget-title-wrap">
+                <div class="widget-title">Daily Challenge</div>
+                <div id="daily-widget-text" class="widget-text">Reach 12 plies in a live game</div>
+              </div>
+            </div>
+            <div class="progress-track">
+              <div id="daily-widget-progress" class="progress-fill"></div>
+            </div>
+            <div id="daily-widget-fraction" class="widget-fraction">0 / 12</div>
+          </section>
         </div>
-      </div>
+      </aside>
 
-      <div class="card">
-        <div class="card-title">Appearance</div>
-        <div class="field-label">Theme</div>
-        <select id="theme" class="select-box">
-          <option value="classic">Classic</option>
-          <option value="forest">Forest</option>
-          <option value="slate">Slate</option>
-        </select>
-        <div class="field-label">Piece Set</div>
-        <select id="piece-set" class="select-box">
-          <option value="classic">Classic</option>
-          <option value="letters">Letters</option>
-        </select>
-        <label class="check-row">
-          <input id="auto-flip" type="checkbox" checked="checked" />
-          <span>Auto flip when playing Black</span>
-        </label>
-      </div>
+      <main id="board-column">
+        <div id="banner" class="banner hidden"></div>
 
-      <button id="play-button" type="button">Play</button>
+        <div id="board-stage">
+          <div id="board-frame">
+            <div id="rank-labels"></div>
+            <div id="board-shell">
+              <canvas id="board-border-canvas" aria-hidden="true"></canvas>
+              <div id="board"></div>
+              <div id="touch-annotation-picker" class="touch-annotation-picker hidden" aria-hidden="true">
+                <button type="button" class="touch-annotation-option touch-annotation-green" data-annotation-color="rgba(0,200,80,0.7)" aria-label="Green annotation"></button>
+                <button type="button" class="touch-annotation-option touch-annotation-yellow" data-annotation-color="rgba(255,200,0,0.7)" aria-label="Yellow annotation"></button>
+                <button type="button" class="touch-annotation-option touch-annotation-red" data-annotation-color="rgba(220,50,50,0.7)" aria-label="Red annotation"></button>
+                <button type="button" class="touch-annotation-option touch-annotation-blue" data-annotation-color="rgba(50,150,255,0.7)" aria-label="Blue annotation"></button>
+              </div>
+            </div>
+          </div>
+          <div id="file-labels"></div>
+        </div>
+      </main>
 
-      <div id="live-toolbar" class="toolbar">
-        <button id="resume-button" type="button" class="small-button">Resume</button>
-        <button id="undo-button" type="button" class="small-button">Undo</button>
-        <button id="restart-button" type="button" class="small-button">Restart</button>
-        <button id="hint-button" type="button" class="small-button">Hint</button>
-        <button id="draw-button" type="button" class="small-button">Offer Draw</button>
-        <button id="resign-button" type="button" class="small-button">Resign</button>
-        <button id="copy-pgn-button" type="button" class="small-button">Copy PGN</button>
-        <button id="mute-button" type="button" class="small-button">Mute</button>
-      </div>
+      <aside id="right-panel" class="side-panel">
+        <div class="panel-scroll">
+          <section id="pre-game-panel" class="panel-section">
+            <button type="button" class="section-toggle" data-target="pre-game-body" aria-expanded="true">
+              <span>Pre-Game Setup</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="pre-game-body" class="section-body">
+              <div id="setup-section">
+                <div class="subcard">
+                  <div class="subcard-title">Bot Mode</div>
+                  <div class="field-label">Ruleset</div>
+                  <div class="segmented-control">
+                    <label class="segment-option">
+                      <input type="radio" name="bot-mode" value="legal" checked="checked" />
+                      <span>Standard Bot</span>
+                    </label>
+                    <label class="segment-option">
+                      <input type="radio" name="bot-mode" value="illegal" />
+                      <span>Illegal Bot</span>
+                    </label>
+                  </div>
+                  <div class="field-label">Difficulty</div>
+                  <select id="difficulty" class="select-box hidden" aria-hidden="true">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected="selected">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="impossible">Impossible</option>
+                    <option value="auto">Auto</option>
+                  </select>
+                  <div id="difficulty-segments" class="segmented-control segmented-control-wide">
+                    <button type="button" class="segment-button" data-difficulty-choice="easy">Easy</button>
+                    <button type="button" class="segment-button" data-difficulty-choice="medium">Medium</button>
+                    <button type="button" class="segment-button" data-difficulty-choice="hard">Hard</button>
+                    <button type="button" class="segment-button" data-difficulty-choice="impossible">Impossible</button>
+                  </div>
+                  <div id="illegal-personality-row" class="hidden">
+                    <div class="field-label">Illegal Personality</div>
+                    <select id="illegal-personality" class="select-box">
+                      <option value="standard">Standard</option>
+                      <option value="chaotic">Chaotic</option>
+                      <option value="greedy">Greedy</option>
+                      <option value="sneaky">Sneaky</option>
+                    </select>
+                  </div>
+                </div>
 
-      <div id="replay-toolbar" class="toolbar hidden">
-        <button id="replay-prev" type="button" class="small-button">Prev</button>
-        <button id="replay-next" type="button" class="small-button">Next</button>
-        <button id="replay-close" type="button" class="small-button">Close Replay</button>
-        <button id="replay-copy-pgn-button" type="button" class="small-button">Copy PGN</button>
-      </div>
+                <div class="subcard">
+                  <div class="subcard-title">Play As</div>
+                  <div class="segmented-control">
+                    <label class="segment-option segment-option-king">
+                      <input type="radio" name="player-color" value="white" checked="checked" />
+                      <span>&#9812; White King</span>
+                    </label>
+                    <label class="segment-option segment-option-king">
+                      <input type="radio" name="player-color" value="black" />
+                      <span>&#9818; Black King</span>
+                    </label>
+                  </div>
+                </div>
 
-      <div class="card">
-        <div class="card-title">Status</div>
-        <div id="status-text" class="status-text">Choose your settings and press Play.</div>
-        <div id="thought-text" class="thought-text">The board opens in standard chess setup.</div>
-      </div>
+                <div class="subcard">
+                  <div class="subcard-title">Clock</div>
+                  <div class="field-label">Preset</div>
+                  <select id="time-mode" class="select-box">
+                    <option value="unlimited">No Clock</option>
+                    <option value="clock-1">1 min</option>
+                    <option value="clock-3">3 min</option>
+                    <option value="clock-5">5 min</option>
+                    <option value="clock-10">10 min</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  <div id="clock-custom-fields" class="split-fields hidden">
+                    <div>
+                      <div class="field-label">Minutes</div>
+                      <input id="custom-minutes" class="text-box" type="text" value="10" />
+                    </div>
+                    <div>
+                      <div class="field-label">Increment</div>
+                      <input id="custom-increment" class="text-box" type="text" value="0" />
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-      <div id="record-summary" class="record-summary"></div>
+              <button id="play-button" type="button">Play Match</button>
+            </div>
+          </section>
 
-      <div class="card">
-        <div class="card-title">Game Record</div>
-        <div id="move-history" class="scroll-panel">No moves yet.</div>
-      </div>
+          <section id="controls-panel" class="panel-section">
+            <button type="button" class="section-toggle" data-target="controls-body" aria-expanded="true">
+              <span>In-Game Controls</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="controls-body" class="section-body">
+              <div id="live-toolbar" class="toolbar control-grid">
+                <button id="undo-button" type="button" class="small-button control-button">&#8617; Undo</button>
+                <button id="restart-button" type="button" class="small-button control-button destructive-button">&#128260; Restart</button>
+                <button id="hint-button" type="button" class="small-button control-button">&#128161; Hint</button>
+                <button id="draw-button" type="button" class="small-button control-button destructive-button">&#129309; Draw</button>
+                <button id="resign-button" type="button" class="small-button control-button destructive-button">&#127987; Resign</button>
+                <button id="resume-button" type="button" class="small-button control-button">&#9654; Resume</button>
+              </div>
 
-      <div class="card">
-        <div class="card-title">AI Notes</div>
-        <div id="ai-insight" class="scroll-panel insight-panel">Top move probabilities will appear here after the bot moves.</div>
-      </div>
+              <div id="replay-toolbar" class="toolbar control-grid hidden">
+                <button id="replay-prev" type="button" class="small-button control-button">&#8592; Prev</button>
+                <button id="replay-next" type="button" class="small-button control-button">Next &#8594;</button>
+                <button id="replay-close" type="button" class="small-button control-button">Close Replay</button>
+                <button id="replay-copy-pgn-button" type="button" class="small-button control-button">Copy PGN</button>
+              </div>
+            </div>
+          </section>
 
-      <div class="card">
-        <div class="card-title">Analysis</div>
-        <div id="analysis-panel" class="scroll-panel">Post-game analysis appears here when a game finishes.</div>
-      </div>
+          <section id="appearance-panel" class="panel-section">
+            <button type="button" class="section-toggle" data-target="appearance-body" aria-expanded="true">
+              <span>Appearance</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="appearance-body" class="section-body">
+              <div class="field-label">Theme Swatches</div>
+              <select id="theme" class="select-box hidden" aria-hidden="true">
+                <option value="classic">Classic</option>
+                <option value="midnight">Midnight</option>
+                <option value="forest">Forest</option>
+                <option value="crimson">Crimson</option>
+                <option value="ice">Ice</option>
+                <option value="gold">Gold</option>
+                <option value="neon">Neon</option>
+                <option value="obsidian">Obsidian</option>
+              </select>
 
-      <div class="card">
-        <div class="card-title">Saved Games</div>
-        <div id="saved-games" class="scroll-panel"></div>
-      </div>
+              <div id="theme-swatches" class="theme-swatches">
+                <button type="button" class="theme-swatch" data-theme="classic">
+                  <span class="theme-mini theme-mini-classic"></span>
+                  <span>Classic</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="midnight">
+                  <span class="theme-mini theme-mini-midnight"></span>
+                  <span>Midnight</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="forest">
+                  <span class="theme-mini theme-mini-forest"></span>
+                  <span>Forest</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="crimson">
+                  <span class="theme-mini theme-mini-crimson"></span>
+                  <span>Crimson</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="ice">
+                  <span class="theme-mini theme-mini-ice"></span>
+                  <span>Ice</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="gold">
+                  <span class="theme-mini theme-mini-gold"></span>
+                  <span>Gold</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="neon">
+                  <span class="theme-mini theme-mini-neon"></span>
+                  <span>Neon</span>
+                </button>
+                <button type="button" class="theme-swatch" data-theme="obsidian">
+                  <span class="theme-mini theme-mini-obsidian"></span>
+                  <span>Obsidian</span>
+                </button>
+              </div>
+
+              <div class="field-label">Piece Style</div>
+              <select id="piece-set" class="select-box">
+                <option value="classic">Classic</option>
+                <option value="neo">Neo</option>
+                <option value="minimal">Minimal</option>
+                <option value="wood">Wood</option>
+              </select>
+
+              <label class="check-row">
+                <input id="auto-flip" type="checkbox" checked="checked" />
+                <span>Auto flip when playing Black</span>
+              </label>
+
+              <div class="field-label">Trail Style</div>
+              <div id="trail-swatches" class="style-swatches"></div>
+
+              <div class="field-label">Board Border</div>
+              <div id="border-swatches" class="style-swatches"></div>
+
+              <button id="background-animation-button" type="button" class="small-button secondary-button">Background Animation On</button>
+            </div>
+          </section>
+
+          <section id="utility-panel" class="panel-section">
+            <button type="button" class="section-toggle" data-target="utility-body" aria-expanded="true">
+              <span>Utility Controls</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="utility-body" class="section-body">
+              <div class="utility-checks">
+                <label class="check-row utility-toggle">
+                  <input id="animate-pieces" type="checkbox" checked="checked" />
+                  <span>Piece move animations</span>
+                </label>
+                <label id="cinematic-captures-row" class="check-row utility-toggle">
+                  <input id="cinematic-captures" type="checkbox" checked="checked" />
+                  <span>Action capture scenes</span>
+                </label>
+              </div>
+
+              <div class="toolbar utility-buttons">
+                <button id="animation-button" type="button" class="small-button secondary-button">Animations On</button>
+                <button id="capture-animation-button" type="button" class="small-button secondary-button">Action Captures On</button>
+                <button id="mute-button" type="button" class="small-button secondary-button">Mute</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="export-panel" class="panel-section">
+            <button type="button" class="section-toggle" data-target="export-body" aria-expanded="true">
+              <span>Export</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="export-body" class="section-body">
+              <div class="toolbar export-buttons">
+                <button id="copy-pgn-button" type="button" class="small-button">Copy PGN</button>
+                <button id="save-game-button" type="button" class="small-button secondary-button">Save Game</button>
+                <button id="load-game-button" type="button" class="small-button secondary-button">Load Game</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="game-record-section" class="panel-section collapsed">
+            <button type="button" class="section-toggle" data-target="game-record-body" aria-expanded="false">
+              <span>Game Record</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="game-record-body" class="section-body">
+              <div id="move-history" class="scroll-panel">No moves yet.</div>
+            </div>
+          </section>
+
+          <section id="ai-notes-section" class="panel-section collapsed">
+            <button type="button" class="section-toggle" data-target="ai-notes-body" aria-expanded="false">
+              <span>AI Notes</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="ai-notes-body" class="section-body">
+              <div id="ai-insight" class="scroll-panel insight-panel">Top move probabilities will appear here after the bot moves.</div>
+            </div>
+          </section>
+
+          <section id="analysis-section" class="panel-section">
+            <button type="button" class="section-toggle" data-target="analysis-body" aria-expanded="true">
+              <span>Analysis</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="analysis-body" class="section-body">
+              <div id="analysis-panel" class="scroll-panel">Post-game analysis appears here when a game finishes.</div>
+            </div>
+          </section>
+
+          <section id="saved-games-card" class="panel-section">
+            <button type="button" class="section-toggle" data-target="saved-games-body" aria-expanded="true">
+              <span>Saved Games</span>
+              <span class="section-chevron">&#8964;</span>
+            </button>
+            <div id="saved-games-body" class="section-body">
+              <div id="saved-games" class="scroll-panel"></div>
+            </div>
+          </section>
+
+          <section id="status-panel" class="panel-section panel-section-status status-bar">
+            <div class="section-static-title">Status</div>
+            <div id="status-text" class="status-text">Choose your settings and press Play.</div>
+            <div id="thought-text" class="thought-text">The board opens in standard chess setup.</div>
+            <div id="record-summary" class="record-summary"></div>
+          </section>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -175,6 +431,32 @@
       </div>
     </div>
   </div>
+
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-card">
+      <div id="confirm-title" class="card-title">Confirm Action</div>
+      <div id="confirm-message" class="modal-subtitle">Are you sure?</div>
+      <div class="result-actions">
+        <button id="confirm-submit" type="button" class="small-button destructive-button">Confirm</button>
+        <button id="confirm-cancel" type="button" class="small-button cancel-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="saved-games-modal" class="modal hidden">
+    <div class="modal-card result-card saved-games-modal-card">
+      <div class="saved-games-modal-head">
+        <div>
+          <div class="card-title">Saved Games</div>
+          <div class="modal-subtitle">Frontend local saves only.</div>
+        </div>
+        <button id="saved-games-modal-close" type="button" class="small-button cancel-button saved-games-modal-close">Close</button>
+      </div>
+      <div id="saved-games-modal-list" class="scroll-panel saved-games-modal-list"></div>
+    </div>
+  </div>
+
+  <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
   <script type="text/javascript" src="/chess_popup.js"></script>
 </body>

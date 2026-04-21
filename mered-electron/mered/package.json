@@ -1,0 +1,78 @@
+{
+  "name": "mered",
+  "version": "0.1.0",
+  "description": "Mered — Bot trainer, cutscenes, and cosmetic skins",
+  "main": "main.js",
+  "author": "Heli Inc.",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start":   "electron .",
+    "dev":     "electron . --dev",
+    "pack":    "electron-builder --dir",
+    "dist":    "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.heliinc.mered",
+    "productName": "Mered",
+    "copyright": "Copyright © 2025 Heli Inc.",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "steam_appid.txt"
+    ],
+    "extraResources": [
+      {
+        "from": "engine",
+        "to": "engine",
+        "filter": ["**/*"]
+      }
+    ],
+    "publish": null,
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico",
+      "publisherName": "Heli Inc."
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.games",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "assets/icon.png",
+      "category": "Game",
+      "desktop": {
+        "Name": "Mered",
+        "Comment": "Bot trainer, cutscenes, and cosmetic skins"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "shortcutName": "Mered",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

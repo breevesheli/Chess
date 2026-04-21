@@ -153,12 +153,15 @@ class ChessService:
         self.records_dir = self.data_dir / "game_records"
         self.records_dir.mkdir(parents=True, exist_ok=True)
         self.autosave_path = self.data_dir / "current_game_autosave.json"
+        self.preferences_path = self.data_dir / "ui_preferences.json"
         self.stats_path = self.data_dir / "player_stats.json"
         self.learning_memory = LearningMemory(self.data_dir / "bot_learning.json")
         self.ai = ChessAI(self.learning_memory)
         self.lock = threading.RLock()
         self.stats = self._load_stats()
         self.opening_book_overlay = _load_opening_book_overlay(self.data_dir)
+        self.preferences = self._load_preferences()
+        self.saved_record_json_path: Path | None = None
         self.reset_preview()
 
     def reload_opening_book_overlay(self) -> None:
@@ -170,10 +173,12 @@ class ChessService:
         self.bot_mode = "legal"
         self.difficulty = "medium"
         self.illegal_personality = "standard"
-        self.theme = "classic"
-        self.piece_set = "classic"
-        self.auto_flip = True
-        self.muted = False
+        self.theme = self.preferences["theme"]
+        self.piece_set = self.preferences["piece_set"]
+        self.auto_flip = self.preferences["auto_flip"]
+        self.muted = self.preferences["muted"]
+        self.animate_pieces = self.preferences["animate_pieces"]
+        self.cinematic_captures = self.preferences["cinematic_captures"]
         self.time_mode = "unlimited"
         self.custom_minutes = 10
         self.custom_increment = 0
@@ -185,6 +190,7 @@ class ChessService:
         self.clock_state: dict[str, float] | None = None
         self.turn_started_at: float | None = None
         self.resume_available = self.autosave_path.exists()
+        self.saved_record_json_path = None
 
     def get_state(self) -> dict[str, Any]:
         with self.lock:
@@ -200,6 +206,8 @@ class ChessService:
         piece_set: str = "classic",
         auto_flip: bool = True,
         muted: bool = False,
+        animate_pieces: bool = True,
+        cinematic_captures: bool = True,
         time_mode: str = "unlimited",
         custom_minutes: int = 10,
         custom_increment: int = 0,
@@ -225,6 +233,8 @@ class ChessService:
             self.piece_set = str(piece_set or "classic").lower()
             self.auto_flip = bool(auto_flip)
             self.muted = bool(muted)
+            self.animate_pieces = bool(animate_pieces)
+            self.cinematic_captures = bool(cinematic_captures)
             self.time_mode = time_mode
             self.custom_minutes = max(1, int(custom_minutes))
             self.custom_increment = max(0, int(custom_increment))
@@ -245,13 +255,17 @@ class ChessService:
                 "illegal_personality": self.illegal_personality,
                 "theme": self.theme,
                 "piece_set": self.piece_set,
+                "animate_pieces": self.animate_pieces,
+                "cinematic_captures": self.cinematic_captures,
                 "time_mode": self.time_mode,
                 "custom_minutes": self.custom_minutes,
                 "custom_increment": self.custom_increment,
                 "moves": [],
                 "ai_learning_samples": [],
                 "ai_decisions": [],
+                "analysis": None,
             }
+            self._persist_preferences()
             self._persist_autosave()
             return self._state_payload()
 
@@ -261,6 +275,8 @@ class ChessService:
         piece_set: str | None = None,
         auto_flip: bool | None = None,
         muted: bool | None = None,
+        animate_pieces: bool | None = None,
+        cinematic_captures: bool | None = None,
     ) -> dict[str, Any]:
         with self.lock:
             if theme is not None:
@@ -271,7 +287,15 @@ class ChessService:
                 self.auto_flip = bool(auto_flip)
             if muted is not None:
                 self.muted = bool(muted)
-            self._persist_autosave()
+            if animate_pieces is not None:
+                self.animate_pieces = bool(animate_pieces)
+            if cinematic_captures is not None:
+                self.cinematic_captures = bool(cinematic_captures)
+            self._persist_preferences()
+            if self.game_active and self.current_game is not None and self.state.result == "*":
+                self._persist_autosave()
+            else:
+                self.resume_available = self.autosave_path.exists()
             return self._state_payload()
 
     def restart_game(self) -> dict[str, Any]:
@@ -284,6 +308,8 @@ class ChessService:
             piece_set=self.piece_set,
             auto_flip=self.auto_flip,
             muted=self.muted,
+            animate_pieces=self.animate_pieces,
+            cinematic_captures=self.cinematic_captures,
             time_mode=self.time_mode,
             custom_minutes=self.custom_minutes,
             custom_increment=self.custom_increment,
@@ -299,13 +325,12 @@ class ChessService:
             self.bot_mode = str(settings.get("bot_mode", "legal"))
             self.difficulty = str(settings.get("difficulty", "medium"))
             self.illegal_personality = str(settings.get("illegal_personality", "standard"))
-            self.theme = str(settings.get("theme", "classic"))
-            self.piece_set = str(settings.get("piece_set", "classic"))
-            self.auto_flip = bool(settings.get("auto_flip", True))
-            self.muted = bool(settings.get("muted", False))
             self.time_mode = str(settings.get("time_mode", "unlimited"))
             self.custom_minutes = int(settings.get("custom_minutes", 10))
             self.custom_increment = int(settings.get("custom_increment", 0))
+            self.animate_pieces = bool(settings.get("animate_pieces", self.preferences["animate_pieces"]))
+            self.cinematic_captures = bool(settings.get("cinematic_captures", self.preferences["cinematic_captures"]))
+            self._persist_preferences()
             self.current_game = payload.get("current_game")
             self.last_ai_summary = payload.get("last_ai_summary")
             self.notice = "Autosaved game resumed."
@@ -325,6 +350,8 @@ class ChessService:
             self.turn_started_at = time.time() if self.clock_state else None
             self.game_active = True
             self.resume_available = True
+            if self.current_game is not None:
+                self.current_game.setdefault("analysis", None)
             return self._state_payload()
 
     def play_human_move(self, from_square: str, to_square: str, promotion: str | None = None) -> dict[str, Any]:
@@ -370,7 +397,7 @@ class ChessService:
                     "uci": played.uci(),
                     "estimated_win_probability": 1.0,
                     "search_depth": 0,
-                    "top_choices": [{"uci": played.uci(), "probability": 1.0, "score": 0.0}],
+                    "top_choices": [{"uci": played.uci(), "san": played.san, "probability": 1.0, "score": 0.0}],
                     "mode": self.bot_mode,
                     "difficulty": self.difficulty,
                     "personality": self.illegal_personality,
@@ -386,15 +413,7 @@ class ChessService:
                     self._persist_autosave()
                 return self._state_payload()
 
-            profile = self._resolve_difficulty_profile().copy()
-            if self.bot_mode == "illegal":
-                if self.illegal_personality == "chaotic":
-                    profile["depth"] = max(1, profile["depth"] - 1)
-                    profile["temperature"] *= 1.9
-                elif self.illegal_personality == "greedy":
-                    profile["temperature"] *= 0.9
-                elif self.illegal_personality == "sneaky":
-                    profile["temperature"] *= 1.2
+            profile = self._analysis_profile_for_color(bot_color)
 
             decision = self.ai.choose_move(
                 self.state.clone(),
@@ -409,19 +428,13 @@ class ChessService:
                 return self._state_payload()
 
             chosen = self._choose_ai_candidate(decision)
+            position_before = self.state.clone()
             played = self.state.play_move(chosen.move)
             self.snapshots.append(self.state.clone())
             self._record_move(played, actor="AI", ai_candidate=chosen, search_depth=decision.depth)
             assert self.current_game is not None
             self.current_game["ai_learning_samples"].append(chosen.features)
-            top_choices = [
-                {
-                    "uci": candidate.move.uci(),
-                    "probability": round(candidate.probability, 4),
-                    "score": round(candidate.total_score, 2),
-                }
-                for candidate in decision.candidates[:3]
-            ]
+            top_choices = self._serialize_ai_choices(position_before, decision)
             self.last_ai_summary = {
                 "move": played.san,
                 "uci": played.uci(),
@@ -538,7 +551,21 @@ class ChessService:
             if not target.exists():
                 raise ValueError("Saved game not found.")
             record = json.loads(target.read_text(encoding="utf-8"))
+            if not record.get("analysis"):
+                record["analysis"] = self._build_analysis_for_record(record)
+                target.write_text(json.dumps(record, indent=2), encoding="utf-8")
             return {"replay": self._build_replay_package(record, target.name)}
+
+    def get_analysis(self) -> dict[str, Any]:
+        with self.lock:
+            if self.current_game is None or self.state.result == "*":
+                return {"analysis": None}
+            analysis = self.current_game.get("analysis")
+            if not analysis:
+                analysis = self._build_analysis_for_record(self.current_game)
+                self.current_game["analysis"] = analysis
+                self._persist_current_analysis()
+            return {"analysis": analysis}
 
     def _find_move(
         self,
@@ -575,6 +602,57 @@ class ChessService:
             rating = int(self.stats.get("rating", 1200))
             return _auto_profile_for_rating(rating)
         return DIFFICULTY_PROFILES[self.difficulty]
+
+    def _analysis_mode_for_color(self, color: str) -> str:
+        return self.bot_mode if color == opposite(self.player_color) else "legal"
+
+    def _analysis_profile_for_color(self, color: str) -> Dict[str, Any]:
+        profile = self._resolve_difficulty_profile().copy()
+        if color != opposite(self.player_color) or self.bot_mode != "illegal":
+            return profile
+        if self.illegal_personality == "chaotic":
+            profile["depth"] = max(1, profile["depth"] - 1)
+            profile["temperature"] *= 1.9
+        elif self.illegal_personality == "greedy":
+            profile["temperature"] *= 0.9
+        elif self.illegal_personality == "sneaky":
+            profile["temperature"] *= 1.2
+        return profile
+
+    def _serialize_ai_choices(self, state: GameState, decision: Any, limit: int = 3) -> list[dict[str, Any]]:
+        choices: list[dict[str, Any]] = []
+        for candidate in decision.candidates[:limit]:
+            trial = state.clone()
+            played = trial.play_move(candidate.move.clone())
+            choices.append(
+                {
+                    "uci": candidate.move.uci(),
+                    "san": played.san,
+                    "probability": round(candidate.probability, 4),
+                    "score": round(candidate.total_score, 2),
+                }
+            )
+        return choices
+
+    def _build_position_insights(self) -> dict[str, dict[str, Any]]:
+        if not self.game_active or self.state.result != "*":
+            return {}
+        insights: dict[str, dict[str, Any]] = {}
+        for color in (WHITE, BLACK):
+            mode = self._analysis_mode_for_color(color)
+            profile = self._analysis_profile_for_color(color)
+            decision = self.ai.choose_move(
+                self.state.clone(),
+                color,
+                mode,
+                depth_override=profile["depth"],
+                temperature=profile["temperature"],
+            )
+            insights[color] = {
+                "mode": mode,
+                "choices": self._serialize_ai_choices(self.state, decision) if decision is not None else [],
+            }
+        return insights
 
     def _opening_book_move(self, bot_color: str) -> Move | None:
         if self.bot_mode != "legal" or len(self.state.move_stack) >= 12:
@@ -624,17 +702,21 @@ class ChessService:
             return None
         if self.time_mode == "bullet":
             initial = 60.0
+            increment = 0.0
         elif self.time_mode == "blitz":
             initial = 300.0
+            increment = 0.0
         elif self.time_mode == "rapid":
             initial = 600.0
+            increment = 5.0
         else:
             initial = float(self.custom_minutes * 60)
+            increment = float(self.custom_increment)
         return {
             WHITE: initial,
             BLACK: initial,
             "initial": initial,
-            "increment": float(self.custom_increment),
+            "increment": increment,
         }
 
     def _sync_clock(self) -> None:
@@ -674,6 +756,8 @@ class ChessService:
                 "piece_set": self.piece_set,
                 "auto_flip": self.auto_flip,
                 "muted": self.muted,
+                "animate_pieces": self.animate_pieces,
+                "cinematic_captures": self.cinematic_captures,
                 "time_mode": self.time_mode,
                 "custom_minutes": self.custom_minutes,
                 "custom_increment": self.custom_increment,
@@ -684,6 +768,43 @@ class ChessService:
         }
         self.autosave_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         self.resume_available = True
+
+    def _default_preferences(self) -> dict[str, Any]:
+        return {
+            "theme": "classic",
+            "piece_set": "classic",
+            "auto_flip": True,
+            "muted": False,
+            "animate_pieces": True,
+            "cinematic_captures": True,
+        }
+
+    def _load_preferences(self) -> dict[str, Any]:
+        preferences = self._default_preferences()
+        if not self.preferences_path.exists():
+            return preferences
+        try:
+            payload = json.loads(self.preferences_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return preferences
+        preferences["theme"] = str(payload.get("theme", preferences["theme"]) or preferences["theme"]).lower()
+        preferences["piece_set"] = str(payload.get("piece_set", preferences["piece_set"]) or preferences["piece_set"]).lower()
+        preferences["auto_flip"] = bool(payload.get("auto_flip", preferences["auto_flip"]))
+        preferences["muted"] = bool(payload.get("muted", preferences["muted"]))
+        preferences["animate_pieces"] = bool(payload.get("animate_pieces", preferences["animate_pieces"]))
+        preferences["cinematic_captures"] = bool(payload.get("cinematic_captures", preferences["cinematic_captures"]))
+        return preferences
+
+    def _persist_preferences(self) -> None:
+        self.preferences = {
+            "theme": self.theme,
+            "piece_set": self.piece_set,
+            "auto_flip": self.auto_flip,
+            "muted": self.muted,
+            "animate_pieces": self.animate_pieces,
+            "cinematic_captures": self.cinematic_captures,
+        }
+        self.preferences_path.write_text(json.dumps(self.preferences, indent=2), encoding="utf-8")
 
     def _load_stats(self) -> dict[str, Any]:
         if not self.stats_path.exists():
@@ -761,6 +882,17 @@ class ChessService:
                         "to": square_name(played.to_row, played.to_col),
                         "san": played.san,
                         "illegal": played.is_illegal,
+                        "capture": bool(played.captured or played.en_passant),
+                        "enPassant": bool(played.en_passant),
+                        "capturedSquare": square_name(
+                            played.to_row + (1 if played.piece.color == WHITE else -1), played.to_col
+                        )
+                        if played.en_passant
+                        else (
+                            square_name(played.to_row, played.to_col)
+                            if played.captured is not None
+                            else None
+                        ),
                     },
                     "checkColor": check_color,
                 }
@@ -845,7 +977,7 @@ class ChessService:
             "pgn": pgn_text,
             "board_key": self.state.board_key(),
             "last_ai_summary": self.last_ai_summary,
-            "analysis": self._build_analysis(),
+            "analysis": self.current_game.get("analysis"),
         }
 
         stem = f"{self.current_game['id']}_{self.bot_mode}_{self.player_color}"
@@ -853,6 +985,7 @@ class ChessService:
         pgn_path = self.records_dir / f"{stem}.pgn"
         json_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
         pgn_path.write_text(pgn_text, encoding="utf-8")
+        self.saved_record_json_path = json_path
 
         ai_samples = list(self.current_game.get("ai_learning_samples", []))
         bot_outcome = 0
@@ -864,19 +997,27 @@ class ChessService:
             bot_outcome = -1
         self.learning_memory.update(self.bot_mode, ai_samples, bot_outcome)
 
-    def _build_analysis(self) -> dict[str, Any]:
-        if self.current_game is None:
+    def _persist_current_analysis(self) -> None:
+        if self.saved_record_json_path is None or not self.saved_record_json_path.exists():
+            return
+        record = json.loads(self.saved_record_json_path.read_text(encoding="utf-8"))
+        record["analysis"] = self.current_game.get("analysis") if self.current_game else None
+        self.saved_record_json_path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+
+    def _build_analysis_for_record(self, record: dict[str, Any] | None) -> dict[str, Any]:
+        if record is None:
             return {"bestMoves": [], "blunders": [], "missedTactics": []}
 
         trial = GameState.initial()
         best_moves: list[dict[str, Any]] = []
         blunders: list[dict[str, Any]] = []
         missed_tactics: list[dict[str, Any]] = []
+        record_bot_mode = str(record.get("bot_mode", self.bot_mode))
 
-        for entry in self.current_game["moves"]:
+        for entry in record.get("moves", []):
             candidate_moves = (
                 trial.generate_illegal_bot_moves(trial.turn)
-                if entry.get("actor") == "AI" and self.bot_mode == "illegal"
+                if entry.get("actor") == "AI" and record_bot_mode == "illegal"
                 else trial.generate_legal_moves(trial.turn)
             )
             if not candidate_moves:
@@ -1004,6 +1145,18 @@ class ChessService:
                 "to": square_name(self.state.last_move.to_row, self.state.last_move.to_col),
                 "san": self.state.last_move.san,
                 "illegal": self.state.last_move.is_illegal,
+                "capture": bool(self.state.last_move.captured or self.state.last_move.en_passant),
+                "enPassant": bool(self.state.last_move.en_passant),
+                "capturedSquare": square_name(
+                    self.state.last_move.to_row + (1 if self.state.last_move.piece.color == WHITE else -1),
+                    self.state.last_move.to_col,
+                )
+                if self.state.last_move.en_passant
+                else (
+                    square_name(self.state.last_move.to_row, self.state.last_move.to_col)
+                    if self.state.last_move.captured is not None
+                    else None
+                ),
             }
 
         check_color = None
@@ -1042,6 +1195,8 @@ class ChessService:
             "pieceSet": self.piece_set,
             "autoFlip": self.auto_flip,
             "muted": self.muted,
+            "animatePieces": self.animate_pieces,
+            "cinematicCaptures": self.cinematic_captures,
             "timeMode": self.time_mode,
             "customMinutes": self.custom_minutes,
             "customIncrement": self.custom_increment,
@@ -1064,11 +1219,12 @@ class ChessService:
             "learnedLegalGames": self.learning_memory.games_played.get("legal", 0),
             "learnedIllegalGames": self.learning_memory.games_played.get("illegal", 0),
             "lastAiSummary": self.last_ai_summary,
+            "positionInsights": self._build_position_insights(),
             "banner": banner,
             "clock": clock,
             "stats": self.stats,
             "resumeAvailable": self.resume_available,
-            "analysis": self._build_analysis() if self.state.result != "*" and self.current_game else None,
+            "analysis": self.current_game.get("analysis") if self.state.result != "*" and self.current_game else None,
         }
 
 
@@ -1108,6 +1264,8 @@ class ChessRequestHandler(BaseHTTPRequestHandler):
                     piece_set=str(body.get("pieceSet", "classic")).lower(),
                     auto_flip=bool(body.get("autoFlip", True)),
                     muted=bool(body.get("muted", False)),
+                    animate_pieces=bool(body.get("animatePieces", True)),
+                    cinematic_captures=bool(body.get("cinematicCaptures", True)),
                     time_mode=str(body.get("timeMode", "unlimited")).lower(),
                     custom_minutes=int(body.get("customMinutes", 10)),
                     custom_increment=int(body.get("customIncrement", 0)),
@@ -1123,6 +1281,8 @@ class ChessRequestHandler(BaseHTTPRequestHandler):
                     piece_set=body.get("pieceSet"),
                     auto_flip=body.get("autoFlip"),
                     muted=body.get("muted"),
+                    animate_pieces=body.get("animatePieces"),
+                    cinematic_captures=body.get("cinematicCaptures"),
                 )
                 self._send_json(payload)
                 return
@@ -1152,6 +1312,9 @@ class ChessRequestHandler(BaseHTTPRequestHandler):
                 return
             if parsed.path == "/api/hint":
                 self._send_json(self.server.service.get_hint())
+                return
+            if parsed.path == "/api/analysis":
+                self._send_json(self.server.service.get_analysis())
                 return
             if parsed.path == "/api/load-record":
                 self._send_json(self.server.service.load_record(str(body.get("file", ""))))

@@ -26,6 +26,13 @@ class ChessServiceTests(unittest.TestCase):
         self.assertEqual(payload["playerColor"], "white")
         self.assertEqual(payload["botMode"], "illegal")
         self.assertEqual(len(payload["availableMoves"]), 20)
+        self.assertTrue(payload["animatePieces"])
+        self.assertTrue(payload["cinematicCaptures"])
+        self.assertIn("positionInsights", payload)
+        self.assertEqual(payload["positionInsights"]["white"]["mode"], "legal")
+        self.assertEqual(payload["positionInsights"]["black"]["mode"], "illegal")
+        self.assertGreater(len(payload["positionInsights"]["white"]["choices"]), 0)
+        self.assertGreater(len(payload["positionInsights"]["black"]["choices"]), 0)
 
     def test_separate_data_directory_is_used_for_runtime_files(self) -> None:
         assets_dir = PROJECT_DIR
@@ -35,6 +42,47 @@ class ChessServiceTests(unittest.TestCase):
         self.assertEqual(service.autosave_path, data_dir / "current_game_autosave.json")
         self.assertTrue((data_dir / "game_records").exists())
         self.assertTrue((data_dir / "current_game_autosave.json").exists())
+
+    def test_preferences_persist_across_restart(self) -> None:
+        service = ChessService(self.test_dir)
+        payload = service.update_preferences(
+            theme="nebula",
+            piece_set="bird",
+            auto_flip=False,
+            muted=True,
+            animate_pieces=False,
+            cinematic_captures=False,
+        )
+        self.assertEqual(payload["theme"], "nebula")
+        self.assertEqual(payload["pieceSet"], "bird")
+        self.assertFalse(payload["animatePieces"])
+        self.assertFalse(payload["cinematicCaptures"])
+
+        reloaded = ChessService(self.test_dir)
+        state = reloaded.get_state()
+        self.assertEqual(state["theme"], "nebula")
+        self.assertEqual(state["pieceSet"], "bird")
+        self.assertFalse(state["autoFlip"])
+        self.assertTrue(state["muted"])
+        self.assertFalse(state["animatePieces"])
+        self.assertFalse(state["cinematicCaptures"])
+        self.assertTrue((self.test_dir / "ui_preferences.json").exists())
+
+    def test_home_screen_preferences_do_not_delete_autosave(self) -> None:
+        service = ChessService(self.test_dir)
+        service.start_game("white", "legal", theme="forest", piece_set="classic")
+        self.assertTrue((self.test_dir / "current_game_autosave.json").exists())
+
+        reopened = ChessService(self.test_dir)
+        preview = reopened.update_preferences(theme="nebula", piece_set="bird")
+        self.assertEqual(preview["theme"], "nebula")
+        self.assertEqual(preview["pieceSet"], "bird")
+        self.assertTrue((self.test_dir / "current_game_autosave.json").exists())
+
+        resumed = reopened.resume_game()
+        self.assertEqual(resumed["theme"], "nebula")
+        self.assertEqual(resumed["pieceSet"], "bird")
+        self.assertTrue(resumed["gameActive"])
 
     def test_human_then_ai_move_updates_history(self) -> None:
         service = ChessService(self.test_dir)
@@ -101,10 +149,19 @@ class ChessServiceTests(unittest.TestCase):
         bias = reloaded.learning_memory.bias_for("legal", ["mode:legal", "piece:queen", "checkmate-pattern"])
         self.assertGreater(bias, 0.0)
 
+        live_state = service.get_state()
+        self.assertEqual(live_state["positionInsights"], {})
+        self.assertIsNone(live_state["analysis"])
+
+        computed_analysis = service.get_analysis()["analysis"]
+        self.assertIsNotNone(computed_analysis)
+        self.assertIn("bestMoves", computed_analysis)
+
         listing = reloaded.get_state()["savedGameList"]
         self.assertEqual(len(listing), 1)
         replay = reloaded.load_record(listing[0]["file"])
         self.assertGreaterEqual(len(replay["replay"]["snapshots"]), 2)
+        self.assertIn("bestMoves", replay["replay"]["analysis"])
 
 
 if __name__ == "__main__":

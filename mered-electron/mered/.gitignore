@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+out/
+build/
+
+# Electron builder cache
+.cache/
+.electron-builder/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env / secrets — NEVER commit these
+.env
+.env.*
+steam_appid.txt.prod
+
+# Keep the dev steam_appid.txt (contains only your App ID, not secret)
+# !steam_appid.txt
+
+# Stockfish binary — large, download separately
+engine/stockfish
+engine/stockfish.exe
+engine/stockfish-*
+*.wasm
+
+# electron-store data (user save files)
+# These live in the OS appdata directory, not the project

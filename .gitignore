@@ -8,4 +8,5 @@ dist/
 *.spec
 bot_learning.json
 current_game_autosave.json
+ui_preferences.json
 player_stats.json
