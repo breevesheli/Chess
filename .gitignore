@@ -1,12 +1,57 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-*.log
-*.pid
+*.pyd
+.Python
+*.egg-info/
+
+# Build outputs
 build/
 dist/
-*.spec
-bot_learning.json
+
+# Saved webpages (Claude conversations etc)
+*.html
+*_files/
+Chess capture cutscene system*/
+
+# Logs and temp
+*.log
+*.pid
+*.pid.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Electron / Node
+node_modules/
+npm-debug.log*
+
+# Game binaries (too large for GitHub, must be downloaded separately)
+engine/stockfish.exe
+engine/stockfish
+engine/*.exe
+
+# Autosave and local game data
 current_game_autosave.json
-ui_preferences.json
-player_stats.json
+bot_learning.json
+opening_book.json
+game_records/
+*.json
+!package.json
+!package-lock.json
+
+# Codex package (internal, not needed in repo)
+codex_package/
+
+# Electron build output
+mered-electron/mered/dist/
+mered-electron/mered/node_modules/

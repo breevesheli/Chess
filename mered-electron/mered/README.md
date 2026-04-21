@@ -41,14 +41,70 @@ mered/
 └── README.md            — This file
 ```
 
-## Adding Stockfish
+## Stockfish Binary (Not Included)
 
-1. Download from https://stockfishchess.org/download/
-2. Place binary at `engine/stockfish` (Mac/Linux) or `engine/stockfish.exe` (Windows)
-3. Mac/Linux: `chmod +x engine/stockfish`
-4. Restart with `npm start` — the engine is auto-detected
+The Stockfish chess engine is **not** checked into this repository.
+The binary is several megabytes and is better downloaded directly
+from the upstream project, which publishes signed builds for every
+platform.
 
-Without Stockfish, the game uses the built-in JS bot.
+### Windows
+
+1. Go to the latest Stockfish release page:
+   [github.com/official-stockfish/Stockfish/releases/latest](https://github.com/official-stockfish/Stockfish/releases/latest).
+2. Download **`stockfish-windows-x86-64-avx2.zip`** from the
+   assets list.
+   - If your CPU does not support AVX2, grab the
+     `stockfish-windows-x86-64-modern.zip` or plain
+     `stockfish-windows-x86-64.zip` build instead. They all work.
+3. Extract the zip. Inside you will find a file named something
+   like `stockfish-windows-x86-64-avx2.exe`.
+4. **Rename it to `stockfish.exe`** exactly.
+5. Place the renamed `stockfish.exe` inside this project's
+   `engine/` folder so the path is:
+
+   ```text
+   mered-electron/mered/engine/stockfish.exe
+   ```
+
+6. Restart the app with `npm start`. The engine is auto-detected
+   on launch — no config changes needed.
+
+### macOS / Linux
+
+1. Same releases page:
+   [github.com/official-stockfish/Stockfish/releases/latest](https://github.com/official-stockfish/Stockfish/releases/latest).
+2. Download the `stockfish-macos-*` or `stockfish-ubuntu-*`
+   archive for your platform.
+3. Extract and rename the binary to `stockfish` (no extension).
+4. Place it at `engine/stockfish`.
+5. Make it executable:
+
+   ```bash
+   chmod +x engine/stockfish
+   ```
+
+6. `npm start` — auto-detected.
+
+### Without Stockfish
+
+If `engine/stockfish.exe` (Windows) or `engine/stockfish` (macOS /
+Linux) is missing, the app falls back to its built-in JavaScript
+bot. The fallback is weaker than Stockfish and is only intended for
+dev sessions where you do not want to download the binary.
+
+### Why it is not in the repo
+
+- The binary is 5–15 MB per platform; multiplied across three
+  platforms it is a lot of Git LFS.
+- Stockfish releases frequently; pinning a checked-in copy would
+  drift fast.
+- Upstream is a trusted, signed source and easy to verify.
+
+The `.gitignore` at the root of this folder explicitly excludes
+`engine/stockfish.exe`, `engine/stockfish`, and anything matching
+`engine/*.exe` or `engine/*.bin` — so you can drop the binary in
+without worrying about accidentally committing it.
 
 ## Building for Distribution
 
