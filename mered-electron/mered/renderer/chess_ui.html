@@ -24826,9 +24826,12 @@ function _wmResolveAreaSpotHitbox(spot, w, h) {
 
 function _wmAreaSpotPriority(spot) {
   if (!spot) return 0;
+  // NPCs must sit above entrance rectangles so a guard walking through a
+  // zone can still be clicked.
+  if (spot.type === 'npc') return 40;
+  if (spot.type === 'chest') return 35;
   if (spot.type === 'readable') return 30;
   if (spot.type === 'entrance') return 20;
-  if (spot.type === 'npc') return 10;
   return 0;
 }
 
@@ -25034,7 +25037,7 @@ const AREA_MAPS = {
     _buildings(w, h) {
       const midY = Math.round(h / 2);
       return [
-        { id: 'royal_archive',   x: 10,            y: 50,          w: 140,           h: 210,        label: 'Royal Archive',  fill: '#504840', labelPos: 'below', target: 'royal_archive',
+        { id: 'royal_archive',   x: 20,            y: 60,          w: 120,           h: 170,        label: 'Royal Archive',  fill: '#504840', labelPos: 'below', target: 'royal_archive',
           drawInner: (ctx, b) => {
             // Mortar lines
             ctx.strokeStyle = 'rgba(30,22,16,0.35)'; ctx.lineWidth = 1;
@@ -25105,7 +25108,7 @@ const AREA_MAPS = {
             ctx.stroke();
           } },
         // LEFT strip: Castle Wall / Garden. Green tone.
-        { id: 'castle_wall',     x: 10, y: 270, w: 140, h: midY - 280,  label: 'Castle Wall',     fill: '#4a5830', labelPos: 'below', target: 'castle_wall',
+        { id: 'castle_wall',     x: 20, y: 280, w: 120, h: Math.max(60, midY - 310),  label: 'Castle Wall',     fill: '#4a5830', labelPos: 'below', target: 'castle_wall',
           drawInner: (ctx, b) => {
             // Bushes / hedges
             ctx.fillStyle = '#5a7238';
@@ -25119,7 +25122,7 @@ const AREA_MAPS = {
             }
           } },
         // RIGHT strip: Training Yard. Warm packed-dirt tone.
-        { id: 'training_yard',   x: w - 230, y: 50, w: 220, h: midY - 60, label: 'Training Yard',   fill: '#7a6040', labelPos: 'below', target: 'training_yard',
+        { id: 'training_yard',   x: w - 220, y: 60, w: 200, h: Math.max(80, midY - 90), label: 'Training Yard',   fill: '#7a6040', labelPos: 'below', target: 'training_yard',
           drawInner: (ctx, b) => {
             // Wooden fence marks around edge
             ctx.strokeStyle = '#5a3818'; ctx.lineWidth = 3;
@@ -25138,7 +25141,7 @@ const AREA_MAPS = {
             ctx.fillRect(b.x + b.w - 85, b.y + 146, 10, 8);
           } },
         // BOTTOM LEFT: Court Physician. Green-tinged.
-        { id: 'court_physician', x: 10, y: midY + 10, w: 140, h: h - midY - 20, label: 'Physician',       fill: '#485040', labelPos: 'above', target: 'court_physician',
+        { id: 'court_physician', x: 20, y: midY + 40, w: 120, h: Math.max(80, h - midY - 80), label: 'Physician',       fill: '#485040', labelPos: 'above', target: 'court_physician',
           drawInner: (ctx, b) => {
             // Green cross
             ctx.fillStyle = '#a0c870';
@@ -25153,7 +25156,7 @@ const AREA_MAPS = {
             }
           } },
         // BOTTOM CENTER: Market Quarter. Warm ochre.
-        { id: 'market_quarter',  x: 160, y: midY + 10, w: Math.max(160, w - 320), h: h - midY - 20, label: 'Market Quarter', fill: '#7a6030', labelPos: 'above', target: 'market_quarter',
+        { id: 'market_quarter',  x: 180, y: midY + 40, w: Math.max(120, w - 360), h: Math.max(80, h - midY - 80), label: 'Market Quarter', fill: '#7a6030', labelPos: 'above', target: 'market_quarter',
           drawInner: (ctx, b) => {
             // Market stall shapes
             const stalls = 5;
@@ -25170,7 +25173,7 @@ const AREA_MAPS = {
             }
           } },
         // BOTTOM RIGHT: Barracks. Medium grey-brown.
-        { id: 'barracks',        x: w - 230, y: midY + 10, w: 220, h: h - midY - 20, label: 'Barracks', fill: '#504838', labelPos: 'above', target: 'barracks',
+        { id: 'barracks',        x: w - 220, y: midY + 40, w: 200, h: Math.max(80, h - midY - 80), label: 'Barracks', fill: '#504838', labelPos: 'above', target: 'barracks',
           drawInner: (ctx, b) => {
             // Bunk shapes — 4 stacked bars
             ctx.fillStyle = '#6a5240';
