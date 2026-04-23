@@ -25308,15 +25308,17 @@ const AREA_MAPS = {
       ];
     },
     // Reposition the DOM hotspots for guard NPCs so they follow the figure.
-    // Called every frame from render() to keep clicks aligned.
+    // Figure spans y-16 (top of head) to y+14 (bottom of body), horizontally
+    // x-10..x+10. A 44x60 box centered on (x, y-1) covers the figure and
+    // gives enough headroom for the "..." prompt glow above.
     _syncGuardHotspots(npcs) {
       const layer = _wmHotspotsNode?.(); if (!layer) return;
       for (const n of npcs) {
         const el = layer.querySelector(`[data-npc="${n.npcId}"]`);
         if (!el) continue;
-        const W = 40, H = 60;
+        const W = 44, H = 60;
         el.style.left = (n.x - W / 2) + 'px';
-        el.style.top  = (n.y - H / 2) + 'px';
+        el.style.top  = (n.y - 1 - H / 2) + 'px';
         el.style.width  = W + 'px';
         el.style.height = H + 'px';
       }
@@ -25367,7 +25369,7 @@ const AREA_MAPS = {
           name: n.name,
           x: n.x / w,
           y: n.y / h,
-          hitbox: { left: n.x - 28, top: n.y - 56, width: 56, height: 86 },
+          hitbox: { left: n.x - 22, top: n.y - 31, width: 44, height: 60 },
         });
       }
       return spots;
