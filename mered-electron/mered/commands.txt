@@ -1,0 +1,2 @@
+cd "c:\Users\breeves\Desktop\VS Code\Chess Popup\mered-electron\mered"
+npm start
