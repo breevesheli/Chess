@@ -1,0 +1,15 @@
+# ── Run the game ─────────────────────────────────────────────────────
+cd "C:\Users\breeves\Desktop\VS Code\Chess Popup\mered"
+npm start
+
+# First time on a new machine: install dependencies first
+#   npm install
+
+# ── Checks ───────────────────────────────────────────────────────────
+npm test           # unit tests
+npm run smoke      # 2D game harness
+npm run smoke3d    # 3D story mode harness
+
+# ── Build a distributable ────────────────────────────────────────────
+npm run pack       # unpacked build into dist/
+npm run dist:win   # Windows installer
