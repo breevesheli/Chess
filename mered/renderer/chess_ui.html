@@ -9897,6 +9897,9 @@ function sceneRegicide(ctx, t, o) {
 // ─────────────────────────────────────────────────────────────────────────
 
 function dispatchCutscene(attackerType, attackerColor, defenderType, defenderColor, isCheckmate, onComplete, pieceInfo) {
+  // Gate: Story mode never plays capture/execution cutscenes — those are for
+  // online and bot-trainer matches only.
+  if (typeof storyActiveFight !== 'undefined' && storyActiveFight) { onComplete?.(); return; }
   // Gate: toggles
   if (!utilityPreferences.animationsEnabled || !utilityPreferences.actionCapturesEnabled) {
     onComplete?.(); return;
@@ -49223,6 +49226,7 @@ console.log('[Mered] Phase 20 Electron integration wired — build is ship-ready
 <script src="story3d/story3d_cutscene.js"></script>
 <script src="story3d/story3d_hud.js"></script>
 <script src="story3d/story3d_inventory.js"></script>
+<script src="story3d/story3d_menu.js"></script>
 <script src="story3d/story3d_patch.js"></script>
 
 </body>

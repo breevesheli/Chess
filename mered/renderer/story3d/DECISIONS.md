@@ -122,3 +122,66 @@ king"). So the player figure is a bare-headed prince until
 `bossesCleared` includes `ch1-boss`. Armor/inventory state is stored on
 `storyProgress.gear3d` so the existing unified save persists it with no save-
 system changes; story coins are spent through the real `spendStoryCoins`.
+
+## D14 — 2D Story retired from the UI, not from the code
+
+The user asked for the 2D story mode "off the game and in a separate folder".
+Physically extracting it from the 49k-line monolith is impossible without
+killing the 3D mode, which runs on the same data and flow functions (D2/D3).
+So: the patch layer removes the 2D entry points at startup (menu card +
+topbar button) behind an `ENABLE_2D_STORY = false` switch, the 3D card is
+promoted to the primary "STORY" card, and `mered/legacy/2d-story/README.md`
+documents what was retired, why the shared code remains, and the one-line
+restore. The main menu itself became a live 3D scene (`story3d_menu.js`):
+the great hall with a mid-game board and the prince waiting, slow orbit
+camera, with the existing HTML cards floating over it (canvas drops to
+z 170 under the menu's z 180 while it owns the screen).
+
+## D15 — Harness windows must disable background throttling
+
+The smoke runs were failing intermittently (same code: 34/34 one run, six
+cutscene-flow timeouts the next, no exception anywhere). Root cause: when the
+Electron window sits fully occluded on the desktop, Chromium throttles
+`setTimeout` to ~1 Hz, and every timer-paced flow — the cutscene typewriter
+(20 ms/char), step waits, the arrival chain — crawls to a standstill while
+`state.running` stays true. `main.js` now creates the window with
+`backgroundThrottling: false` for `--smoke`/`--smoke3d` only; players keep the
+default (a covered game pausing its cutscene timers is fine). Two real fixes
+came out of the same hunt: the cutscene NEXT button now disarms on every step
+entry (a stale visible handler during a timed step could spawn a second
+concurrent step chain), and hub extras (companions, the riddler) are now part
+of the animator pump, so they breathe/blink and can `lookAt` the player.
+
+## D16 — Graphics pass: IBL, matte helms, chess-piece silhouettes
+
+A quality pass after the user found the look "poorly put together." Five threads:
+
+- **Image-based lighting.** `core.applyAtmosphere(env)` now builds a prefiltered
+  PMREM environment map from each scene's own sky+ground colours (cached per
+  palette) and assigns it to `scene.environment`. PMREMGenerator is core
+  three.js, so no add-ons — works on the UMD build. Metal reflects, ambient
+  is grounded. Centralised the old `scene.fog=/background=` pairs into this one
+  call across hub/board/menu/cutscene; the world-map opts out (flat matte).
+- **Helmets are matte, not mirrors.** With IBL on, glossy metal helms caught
+  two symmetric specular highlights that read as eyes. Helms use `flat()` steel
+  at metalness 0.12 / roughness 0.62 — a brushed finish that can't mirror the
+  scene's stained-glass into a face.
+- **Chess-piece silhouettes.** Knights wear a crested bascinet and ride a
+  procedural warhorse on the battle board (`buildHorse`, opt-in via
+  `opts.mounted`, wired for knight-letter pieces in story3d_board). Rooks (non
+  -guard) wear a crenellated battlement great-helm — the "walking castle" the
+  user asked for, done deliberately. Bishops (unless hooded, e.g. Saoirse) wear
+  a white liturgical mitre with a cross, crozier, and pectoral cross. Ambient
+  guards keep the approved kettle-helm via a `kettle` flair flag.
+- **Hair rebuilt.** A rounded crown mass with a real hairline/fringe, sideburns
+  and nape replaces the lego cap; styles short/long/wavy/bun/ponytail/topknot/
+  bald, hashed per character. Real skin tones (6-tone palette) replace the old
+  colour-tinted skin.
+- **Water is alive.** `FX.water` displaces a segmented plane with travelling
+  sine waves and recomputes normals each frame, so the IBL reflection shimmers;
+  `still:true` gives calm ponds. Added a moonlit pool to the Ch.5 clearing.
+
+Verification helpers added to `--smoke3d` (behind SMOKE3D_SHOTS): isolated
+"solo portrait" captures that hide all other figures and photograph one subject
+against the scene, plus a battle-rank and water capture — the reliable way to
+review character silhouettes.

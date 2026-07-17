@@ -200,6 +200,124 @@
     spare_saoirse: ['ch5.farewell_seraphine_spare', 'ch5.farewell_seld_spare', 'ch5.farewell_theron_spare'],
   };
 
+  // ── Chapter arrivals — one scene-setter the first time you reach each
+  // hub, so nobody is dropped into a castle unexplained. New additive
+  // scenes in the script's voice (D12).
+  const ARRIVAL_CUTSCENES = {
+    // The childhood prologue — how it all started: a father, a board, and
+    // the boy who would become your best friend. Plays once, before ch1.
+    'ch0.father': {
+      bg: 'palace_antechamber', chapter: 'ch1', story3d: true,
+      steps: [
+        { place: 'father', x: 0.6, y: 0.7 },
+        { place: 'young_player', x: 0.38, y: 0.74 },
+        { say: { speaker: '—', text: 'Years before the bells. A private room, a small board, a king with an hour to spare.' } },
+        { say: { speaker: 'YOUR FATHER', text: 'Sit. This is the board. Sixty-four squares. Everything I do all day happens here first.' } },
+        { say: { speaker: 'YOUR FATHER', text: 'The pawns go forward and cannot come back. Remember that. Most of ruling is remembering that.' } },
+        { say: { speaker: 'YOUR FATHER', text: 'The king moves one square at a time. Slowest piece on the board. The whole war is about him anyway.' } },
+        { say: { speaker: '—', text: 'He does not let you win. He never lets you win. You learn faster that way — he says.' } },
+      ],
+    },
+    'ch0.friend': {
+      bg: 'palace_training_yard', chapter: 'ch1', story3d: true,
+      steps: [
+        { place: 'teacher', x: 0.5, y: 0.66 },
+        { place: 'young_player', x: 0.38, y: 0.76 },
+        { say: { speaker: '—', text: 'Master Edwin taught letters, history, and the board. He took exactly two students.' } },
+        { place: 'young_saoirse', x: 0.62, y: 0.76 },
+        { say: { speaker: 'MASTER EDWIN', text: 'This is Saoirse. His mother serves the court now. He already knows the moves — you will play him.' } },
+        { say: { speaker: '—', text: 'Your first match lasts eleven moves. He does not let you win either.' } },
+        { say: { speaker: 'SAOIRSE', text: 'Again?' } },
+        { say: { speaker: '—', text: 'Again. And again, for years. That is the whole story of how you met your best friend.' } },
+        { fade: { id: 'teacher', to: 0, ms: 900 } },
+        { say: { speaker: '—', text: 'Years pass. The bells ring three days. And the court gathers in the great hall.' } },
+      ],
+    },
+    'ch1.arrival': {
+      bg: 'palace_great_hall', chapter: 'ch1', story3d: true,
+      steps: [
+        { place: 'player', x: 0.46, y: 0.76 },
+        { say: { speaker: '—', text: 'The Iron King is dead. Three days of bells, and then this silence.' } },
+        { say: { speaker: '—', text: 'By right of birth — four minutes of it — the crown falls to you.' } },
+        { place: 'seraphine', x: 0.6, y: 0.72 },
+        { say: { speaker: 'SERAPHINE', text: 'The court is gathered. They will not kneel to a name; they will kneel to a player.' } },
+        { say: { speaker: 'SERAPHINE', text: 'Your brother waits in the antechamber. Start there. Then the old hawks. Then Aldwyn.' } },
+        { say: { speaker: '—', text: 'Walk among them. Take their challenges. Take what is yours.' } },
+      ],
+    },
+    'ch2.arrival': {
+      bg: 'army_camp_night', chapter: 'ch2', story3d: true,
+      steps: [
+        { place: 'player', x: 0.44, y: 0.74 },
+        { place: 'saoirse', x: 0.58, y: 0.76 },
+        { say: { speaker: '—', text: 'The army marches at your back now. The Ashfields open ahead — burnt, patient, full of blades for hire.' } },
+        { say: { speaker: 'SAOIRSE', text: 'Brenna runs these companies. Beat her people in the field and she will come to you.' } },
+      ],
+    },
+    'ch3.arrival': {
+      bg: 'valdris_border_town', chapter: 'ch3', story3d: true,
+      steps: [
+        { place: 'player', x: 0.44, y: 0.74 },
+        { say: { speaker: '—', text: 'Across the river, Valdris. The fields change colour. The sky does not.' } },
+        { say: { speaker: '—', text: 'Halvane holds the war room beyond this town. The road to him runs through his vanguard.' } },
+      ],
+    },
+    'ch4.arrival': {
+      bg: 'valdris_throne_room', chapter: 'ch4', story3d: true,
+      steps: [
+        { place: 'player', x: 0.44, y: 0.76 },
+        { say: { speaker: '—', text: 'The citadel of the pretender. No guards left worth naming. No court. Only him.' } },
+        { say: { speaker: '—', text: 'Aldric the Undying waits on a borrowed throne, alone, as if he were expecting you.' } },
+      ],
+    },
+    'ch5.arrival': {
+      bg: 'clearing_ch5', chapter: 'ch5', story3d: true,
+      steps: [
+        { place: 'player', x: 0.42, y: 0.74 },
+        { say: { speaker: '—', text: 'A clearing outside camp. A small fire. Two logs for sitting.' } },
+        { say: { speaker: '—', text: 'He came alone. He could have run. He is waiting for you.' } },
+      ],
+    },
+  };
+  function arrivalId(chapterId) {
+    return ARRIVAL_CUTSCENES[chapterId + '.arrival'] ? chapterId + '.arrival' : null;
+  }
+  // ch1's first entry plays the childhood prologue chain, then the arrival.
+  const ARRIVAL_CHAINS = { ch1: ['ch0.father', 'ch0.friend', 'ch1.arrival'] };
+  function arrivalChain(chapterId) {
+    return ARRIVAL_CHAINS[chapterId] || (arrivalId(chapterId) ? [arrivalId(chapterId)] : []);
+  }
+
+  // ── Battle boards: boss fights play out with PEOPLE as the pieces ────
+  // White is your actual war party (the 2D roster's own chess roles —
+  // PARTY_ABILITY_META); black is the boss's army in faction colours.
+  const BATTLE_WHITE = {
+    king: 'player',
+    queen: 'seraphine', // the Strategist takes the queen, as the roster says
+    knight: ['idris', 'cael'],
+    bishop: ['maren', 'theron'],
+    rook: ['brennar', 'seld'],
+    pawn: 'levied',     // the Levied infantry
+  };
+  function battleFigureFor(letter, chapterId, ordinal, bossId) {
+    const lower = letter.toLowerCase();
+    const type = { k: 'king', q: 'queen', r: 'rook', b: 'bishop', n: 'knight', p: 'pawn' }[lower];
+    const white = letter === letter.toUpperCase();
+    if (white) {
+      const who = BATTLE_WHITE[type];
+      if (type === 'pawn') return { def: { kind: 'rook', color: '#5a5444', scale: 0.92 }, faction: 'aurveld' };
+      if (Array.isArray(who)) return { id: who[ordinal % who.length] };
+      return { id: who };
+    }
+    // Black: the boss himself takes the king; his army fills the ranks.
+    if (type === 'king' && bossId) return { id: bossId };
+    const fac = CHAPTER_ENEMY_FACTION[chapterId] || 'valdris';
+    const main = FACTIONS[fac] ? FACTIONS[fac].main : '#3a3a3a';
+    const kindByType = { king: 'king', queen: 'queen', rook: 'rook', bishop: 'bishop', knight: 'knight', pawn: 'rook' };
+    const scale = type === 'pawn' ? 0.92 : type === 'king' ? 1.08 : 1.0;
+    return { def: { kind: kindByType[type], color: main, scale }, faction: fac };
+  }
+
   // ── Ending presentation moods (consumed by the cutscene presenter) ───
   const ENDING_MOODS = {
     'ch5.ending_kill': {
@@ -290,11 +408,28 @@
   };
   // Hub placement data (positions sized to each chapter hub's footprint).
   const HUB_SPOTS = {
-    ch1: { companions: [[-11, 5], [11, 4], [-10, -2], [10.5, -3], [-6.5, 9]], patron: [9, 9.5], dummy: [-9, 9.5], pages: [[-12.5, 10.5], [12.5, -8.5]] },
+    ch1: { companions: [[8, -3], [8, 3], [11.5, -5.5], [11.5, 5.5], [14.5, -2.6]], patron: [1.5, -9], dummy: [-14, -7.5], pages: [[-14.8, 10.8], [15.8, 10.5]] },
     ch2: { companions: [[-11, 6], [11.5, 5], [-12, -4], [12, -5], [-7, 9]], patron: [7.5, 9.5], dummy: [-10, 8.5], pages: [[-13.5, 11], [13, -9]] },
     ch3: { companions: [[-11, 6], [11.5, 5.5], [-12, -6], [12, -6.5], [-8, 10]], patron: [8, 10], dummy: [-10.5, 9.5], pages: [[-13.5, 10.5], [13, -9.5]] },
     ch4: { companions: [[-9, 6], [9.5, 5.5], [-9.5, -3], [9.5, -3.5], [-6, 8.5]], patron: [7, 8.5], dummy: [-8, 8.5], pages: [[-11, 9.5], [10.5, -8]] },
     ch5: { companions: [[-9, 6], [9.5, 5], [-9.5, -4], [9.5, -4.5], [-6, 8.5]], patron: [6.5, 8.5], dummy: [-8.5, 8], pages: [[-11, 9.5], [10.5, -8.5]] },
+  };
+
+  // Ambient walkers: patrolling guards + wandering citizens per location.
+  // The clearing stays empty — "just the two of you".
+  const WALKERS = {
+    ch1: { guards: 4, citizens: 4 },  // castle + courtyard + farms to populate
+    ch2: { guards: 2, citizens: 1 },
+    ch3: { guards: 1, citizens: 3 },
+    ch4: { guards: 2, citizens: 0 },
+    ch5: { guards: 0, citizens: 0 },
+  };
+  const CITIZEN_COLORS = {
+    ch1: ['#5a4a3a', '#4a3e50', '#3e4a42'],            // palace servants
+    ch2: ['#4a4236', '#3e3a30'],                        // camp followers
+    ch3: ['#6a5444', '#566249', '#5a4a5e', '#71594a'],  // townsfolk
+    ch4: ['#3e4248'],
+    ch5: [],
   };
 
   /** Companions present in a hub, given live progress. */
@@ -332,6 +467,8 @@
     ARMOR, SHOP_STOCK, SHOP_KEEPERS, QUEST_REWARDS,
     FAREWELL_CUTSCENES, FAREWELL_ORDER, ENDING_MOODS,
     SET_BONUSES, COMPANIONS, COMPANION_LINES, LEAVERS, RIDDLES, LORE_PAGES, HUB_SPOTS,
+    WALKERS, CITIZEN_COLORS, ARRIVAL_CUTSCENES, arrivalId, arrivalChain,
+    BATTLE_WHITE, battleFigureFor,
     factionOf, shopStock, questReward, farewellIds, endingMood,
     setPrefixOf, fullSetPrefix, companionsFor, companionLine,
   };

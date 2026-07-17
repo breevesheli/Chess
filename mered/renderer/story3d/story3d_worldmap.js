@@ -157,6 +157,7 @@
     NS.scene.add(state.group);
     NS.scene.fog = new THREE.Fog(new THREE.Color('#14100c'), 28, 60);
     NS.scene.background = new THREE.Color('#14100c');
+    NS.scene.environment = null; // flat matte war-table, no reflections
     state.look.set(0, 0, 0);
     state.dist = 18;
     _applyCamera(true);

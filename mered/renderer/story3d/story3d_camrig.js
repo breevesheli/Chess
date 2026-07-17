@@ -55,11 +55,12 @@
       const dx = e.clientX - _drag.x, dy = e.clientY - _drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 4) _drag.moved = true;
       if (!_drag.moved) return;
+      const sens = (NS.settings && NS.settings.sensitivity) || 1;
       if (state.mode === 'match') {
-        state.matchYaw = THREE.MathUtils.clamp(state.matchYaw - dx * 0.005, -1.1, 1.1);
-        state.matchPitch = THREE.MathUtils.clamp(state.matchPitch - dy * 0.004, 0.55, 1.38);
+        state.matchYaw = THREE.MathUtils.clamp(state.matchYaw - dx * 0.005 * sens, -1.1, 1.1);
+        state.matchPitch = THREE.MathUtils.clamp(state.matchPitch - dy * 0.004 * sens, 0.55, 1.38);
       } else if (state.mode === 'hub') {
-        state.hubYaw = THREE.MathUtils.clamp(state.hubYaw - dx * 0.004, -1.2, 1.2);
+        state.hubYaw = THREE.MathUtils.clamp(state.hubYaw - dx * 0.004 * sens, -1.2, 1.2);
       }
       _drag.x = e.clientX; _drag.y = e.clientY;
     });
@@ -86,7 +87,7 @@
     state.target = targetObj;
     state.hubYaw = 0;
     state.hubHeight = (env && env.camera && env.camera.hubHeight) || 3.2;
-    state.hubDist = 5.6;
+    state.hubDist = (env && env.camera && env.camera.hubDist) || 5.6;
   }
 
   /**
@@ -99,6 +100,7 @@
     state.boardCenter.copy(boardCenter);
     state.matchYaw = 0;
     state.matchPitch = opts.pitch ?? 1.05;
+    state.matchPitchHome = state.matchPitch; // drag springs back here
     state.matchDist = opts.dist ?? 4.2;
     if (opts.immediate) { state.mode = 'match'; return; }
     // Sweep in cinematically from a wider shot.
@@ -170,7 +172,15 @@
   function _update(dt) {
     const cam = state.camera;
     if (!cam) return;
+    // Released drag offsets drift gently home (~2s), never snapping.
+    if (!_drag || !_drag.moved) {
+      const k = 1 - Math.pow(0.3, dt);
+      state.hubYaw += (0 - state.hubYaw) * k;
+      state.matchYaw += (0 - state.matchYaw) * k;
+      state.matchPitch += ((state.matchPitchHome ?? state.matchPitch) - state.matchPitch) * k;
+    }
     if (state.mode === 'hub' && state.target) {
+      const sens = Math.max(0.2, (NS.settings && NS.settings.sensitivity) || 1);
       const heading = state.target.userData.heading ?? state.target.rotation.y;
       const yaw = heading + Math.PI + state.hubYaw; // behind the character
       const tx = state.target.position.x, tz = state.target.position.z;
@@ -179,7 +189,7 @@
         state.target.position.y + state.hubHeight,
         tz + Math.cos(yaw) * state.hubDist
       );
-      cam.position.lerp(_v, 1 - Math.pow(0.0012, dt)); // critically-damped feel
+      cam.position.lerp(_v, 1 - Math.pow(0.01, dt * sens)); // swing speed scales with turn setting
       state.look.lerp(new THREE.Vector3(tx, state.target.position.y + 1.5, tz), 1 - Math.pow(0.0005, dt));
       cam.lookAt(state.look);
     } else if (state.mode === 'match') {

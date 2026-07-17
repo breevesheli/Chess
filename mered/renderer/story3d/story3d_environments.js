@@ -70,6 +70,9 @@
   function atmosphere(c, mood) {
     c.sky = new THREE.Color(mood.sky);
     c.fog = new THREE.Fog(new THREE.Color(mood.fog || mood.sky), mood.fogNear ?? 18, mood.fogFar ?? 60);
+    // ground tone for image-based lighting (the hemi ground colour reads as
+    // bounced light from the floor); falls back to a darkened sky
+    c.envGround = new THREE.Color(mood.hemi ? mood.hemi[1] : (mood.fog || mood.sky));
     const hemi = new THREE.HemisphereLight(mood.hemi[0], mood.hemi[1], mood.hemi[2]);
     c.group.add(hemi);
     if (mood.sun) {
@@ -83,6 +86,8 @@
         sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
         sun.shadow.camera.far = 60;
         sun.shadow.bias = -0.0015;
+        sun.shadow.normalBias = 0.025;  // kills shadow-acne on the curved figures
+        sun.shadow.radius = 4;          // soft PCF edges, less hard-cut
       }
       c.group.add(sun);
       c.group.add(sun.target);
@@ -92,6 +97,7 @@
   /** Interior room shell: adds 4 walls + colliders (floor done separately). */
   function room(c, h, wallMat, opts) {
     opts = opts || {};
+    c.indoor = true; // a 4-walled shell — knights go unmounted here (horses outside only)
     const W = c.width, D = c.depth, t = 0.4;
     const mk = (w_, h_, d_, x, y, z) => {
       const m = new THREE.Mesh(P().BOX(), wallMat);
@@ -110,13 +116,105 @@
     }
   }
 
+  /** Distant, non-accessible scenery beyond the playable bounds, so no
+   *  exterior ever ends in a void: the ground runs to the horizon, with a
+   *  ring of haze-dimmed hills and style-specific silhouettes (castle
+   *  towers, forest walls, rooftops, ash ridges) tucked just inside the fog. */
+  function backdrop(c, opts) {
+    opts = opts || {};
+    const far = (c.fog ? c.fog.far : 50) * 0.72;
+    // the world continues underfoot
+    const farGround = new THREE.Mesh(
+      P().geo('bd-ground', () => new THREE.PlaneGeometry(220, 220)),
+      M().get('ground', opts.ground || '#3a3428', { repeat: 30 })
+    );
+    farGround.rotation.x = -Math.PI / 2;
+    farGround.position.y = -0.06;
+    farGround.receiveShadow = true;
+    c.group.add(farGround);
+    const put = (m, x, z) => { m.position.x = x; m.position.z = z; m.castShadow = false; m.receiveShadow = false; c.group.add(m); };
+    // ring of low hills
+    const hillMat = M().get('ground', opts.hillColor || '#3a4030', { seed: 151 });
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.35;
+      const hill = new THREE.Mesh(P().SPHERE(), hillMat);
+      const s = far * (0.35 + (i % 3) * 0.12);
+      hill.scale.set(s, s * 0.22, s * 0.7);
+      hill.rotation.y = a;
+      put(hill, Math.cos(a) * far * 1.05, Math.sin(a) * far * 1.05);
+      hill.position.y = -s * 0.04;
+    }
+    const style = opts.style;
+    if (style === 'castle') {
+      // the rest of Caer Aurveld looming past the wall
+      const stone = M().get('stone', '#2c2820', { seed: 153 });
+      [[-0.32, 1.15, 7], [-0.12, 1.0, 10], [0.1, 1.1, 8], [0.3, 0.95, 12]].forEach(([fxr, hk, w]) => {
+        const tower = new THREE.Mesh(P().CYL(), stone);
+        tower.scale.set(2.6, far * 0.28 * hk, 2.6);
+        put(tower, fxr * far * 2, -far);
+        tower.position.y = far * 0.14 * hk;
+        const cap = new THREE.Mesh(P().CONE(), M().get('fabric', '#4a2020', { seed: 155 }));
+        cap.scale.set(3.2, 2.6, 3.2);
+        put(cap, fxr * far * 2, -far);
+        cap.position.y = far * 0.28 * hk + 1.2;
+        const keep = new THREE.Mesh(P().BOX(), stone);
+        keep.scale.set(w, far * 0.16, 4);
+        put(keep, fxr * far * 2 + w * 0.6, -far * 1.04);
+        keep.position.y = far * 0.08;
+      });
+    } else if (style === 'forest') {
+      const dark = M().get('fabric', opts.treeColor || '#1e2c1e', { seed: 157 });
+      for (let i = 0; i < 26; i++) {
+        const a = (i / 26) * Math.PI * 2;
+        const tr = new THREE.Mesh(P().CONE(), dark);
+        const s = 2.2 + (i % 4) * 0.9;
+        tr.scale.set(s, s * 2.4, s);
+        put(tr, Math.cos(a) * far * (0.82 + (i % 3) * 0.1), Math.sin(a) * far * (0.82 + (i % 3) * 0.1));
+        tr.position.y = s * 1.1;
+      }
+    } else if (style === 'town') {
+      const wallM = M().get('plaster', '#3e382e', { seed: 159 });
+      const roofM = M().get('wood', '#241c12', { seed: 161 });
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 + 0.2;
+        const x = Math.cos(a) * far * 0.95, z = Math.sin(a) * far * 0.95;
+        const hN = 2.5 + (i % 3);
+        const house = new THREE.Mesh(P().BOX(), wallM);
+        house.scale.set(4 + (i % 2) * 2, hN, 4);
+        put(house, x, z);
+        house.position.y = hN / 2;
+        const roof = new THREE.Mesh(P().CONE(), roofM);
+        roof.scale.set(3.6, 2, 3.6);
+        put(roof, x, z);
+        roof.position.y = hN + 0.9;
+      }
+    } else if (style === 'ashen') {
+      const ridge = M().get('stone', '#26221c', { seed: 163 });
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + 0.5;
+        const r = new THREE.Mesh(P().CONE(), ridge);
+        const s = far * 0.3;
+        r.scale.set(s, s * 0.5, s * 0.5);
+        put(r, Math.cos(a) * far * 1.1, Math.sin(a) * far * 1.1);
+        r.position.y = s * 0.18;
+      }
+      // far smoke plumes — something is always burning out there
+      [[-0.6, -1], [0.7, -0.9]].forEach(([px, pz]) => {
+        const sm = NS.FX.smokeColumn({ opacity: 0.12 });
+        sm.position.set(px * far, far * 0.1, pz * far);
+        sm.scale.setScalar(4);
+        c.group.add(sm);
+      });
+    }
+  }
+
   function finish(c, extras) {
     const out = Object.assign({
       group: c.group,
       colliders: c.colliders,
       bounds: c.bounds,
       npcSlots: c.npcSlots,
-      sky: c.sky, fog: c.fog,
+      sky: c.sky, fog: c.fog, envGround: c.envGround, indoor: !!c.indoor,
       animators: [],
       spawn: { x: 0, z: c.depth * 0.32, facing: Math.PI },
       boardAnchor: { x: 0, z: 0, rotY: 0 },
@@ -172,9 +270,9 @@
   // floor, torches, central throne with gold glow (L19228). Hub for ch1.
   BUILDERS.palace_great_hall = function (opts) {
     const hub = opts && opts.hub;
-    const c = ctx(hub ? 30 : 22, hub ? 26 : 18);
+    const c = ctx(hub ? 44 : 22, hub ? 38 : 18); // the hub is a true great hall, not a room
     atmosphere(c, {
-      sky: '#2a2018', fog: '#2a2018', fogNear: hub ? 16 : 12, fogFar: hub ? 44 : 34,
+      sky: '#2a2018', fog: '#2a2018', fogNear: hub ? 22 : 12, fogFar: hub ? 64 : 34,
       // a royal hall in daylight — bright enough to read every face
       hemi: ['#7a6644', '#2a2014', 1.15],
       sun: { color: '#ffd9a0', i: 0.72, pos: [6, 12, 4], shadowSize: hub ? 20 : 14 },
@@ -208,11 +306,23 @@
     b1.position.y = 6;
     const b2 = add(c, P().banner({ color: M().PALETTE.bannerGreen, h: 3 }), fx(c, 0.80), -c.depth / 2 + 1.2);
     b2.position.y = 6;
-    // Column rows framing the hall (fluted, with bases and capitals)
+    // Column rows framing the hall (fluted, with bases and capitals) —
+    // the hub gets a double colonnade with side rugs to read as wings
     [-1, 1].forEach(side => {
-      for (let i = 0; i < (hub ? 4 : 3); i++) {
-        const colX = side * (c.width / 2 - 3), colZ = -c.depth / 2 + 4 + i * 5.5;
-        addC(c, P().column({ h: 7, color: '#443a2e' }), colX, colZ, 0, 0.7, 0.7);
+      const rows = hub ? 6 : 3;
+      const gap = hub ? (c.depth - 8) / (rows - 1) : 5.5;
+      for (let i = 0; i < rows; i++) {
+        const colZ = -c.depth / 2 + 4 + i * gap;
+        addC(c, P().column({ h: 7, color: '#443a2e' }), side * (c.width / 2 - 3), colZ, 0, 0.7, 0.7);
+        if (hub) addC(c, P().column({ h: 7, color: '#443a2e' }), side * (c.width / 2 - 10), colZ, 0, 0.7, 0.7);
+      }
+      if (hub) {
+        add(c, P().rug({ w: 2, d: c.depth * 0.55, color: '#3e4a42', border: '#2a342c' }), side * (c.width / 2 - 6.5), 0);
+        // side-wing dressing: tables, banners, braziers
+        addC(c, P().boardTable({ topSize: 1.6, topY: 0.85, color: '#3c2c18' }), side * (c.width / 2 - 6.5), -c.depth / 4, 0, 1, 1);
+        addC(c, P().barrel({}), side * (c.width / 2 - 5), c.depth / 4, 0, 0.4, 0.4);
+        const wb = add(c, P().banner({ color: side < 0 ? M().PALETTE.bannerGold : M().PALETTE.bannerGreen, h: 2.4, seed: 8 + side }), side * (c.width / 2 - 0.8), 0);
+        wb.position.y = 5; wb.rotation.y = side * -Math.PI / 2;
       }
     });
     // Torches at 0.18 / 0.82 (the two 2D ember fireplaces) + extras unlit
@@ -231,16 +341,16 @@
     addC(c, P().flag({ color: '#e4c058', trim: '#c8a040', seed: 1 }), -2.6, c.depth / 2 - 4.5, 0.4, 0.25, 0.25);
     addC(c, P().flag({ color: '#68a048', trim: '#c8a040', seed: 2 }), 2.6, c.depth / 2 - 4.5, -0.4, 0.25, 0.25);
     if (hub) {
-      // NPC stations along the columns + by the throne dais
+      // NPC stations along the colonnade + by the throne dais
       c.npcSlots = [
-        { x: -6, z: -6, facing: Math.PI / 3 },
-        { x: 6, z: -6, facing: -Math.PI / 3 },
-        { x: -8, z: 1, facing: Math.PI / 2 },
-        { x: 8, z: 1, facing: -Math.PI / 2 },
-        { x: -4, z: 6, facing: 0.4 },
-        { x: 4, z: 6, facing: -0.4 },
-        { x: 0, z: -7.5, facing: 0 },              // boss — before the throne
-        { x: -9.5, z: 8, facing: Math.PI / 4 },    // merchant corner
+        { x: -8, z: -9, facing: Math.PI / 3 },
+        { x: 8, z: -9, facing: -Math.PI / 3 },
+        { x: -11, z: 1, facing: Math.PI / 2 },
+        { x: 11, z: 1, facing: -Math.PI / 2 },
+        { x: -5, z: 8, facing: 0.4 },
+        { x: 5, z: 8, facing: -0.4 },
+        { x: 0, z: -12, facing: 0 },               // boss — before the throne
+        { x: -14, z: 11, facing: Math.PI / 4 },    // merchant corner
       ];
     }
     return finish(c, {
@@ -249,6 +359,227 @@
       stage: { center: [0, 0, -2], right: [1, 0, 0], forward: [0, 0, 1], width: 13, depth: 6 },
       tableStyle: 'stone',
       camera: { hubHeight: 3.4 },
+    });
+  };
+
+  // Ch1 HUB — the palace complex: five rooms off a central corridor, per the
+  // floor plan: barracks + library north, chapel + armory south, and the
+  // great throne hall filling the east end. Door gaps carry lintels; every
+  // room is furnished to read at a glance.
+  BUILDERS.palace_complex = function () {
+    const c = ctx(80, 48);
+    c.indoor = true; // knights stand unmounted (it's mostly a castle)
+    atmosphere(c, {
+      sky: '#c8b89c', fog: '#cabfa8', fogNear: 26, fogFar: 80, // warm late-day light
+      hemi: ['#d0c4a4', '#5a4a32', 1.15],
+      sun: { color: '#ffe2b0', i: 0.85, pos: [14, 22, 12], shadow: true, shadowSize: 32 },
+    });
+    backdrop(c, { ground: '#4a5026', hillColor: '#5a6838', style: 'castle' });
+    // grass for the exterior, west of the castle's west wall (x = -17)
+    const exGrass = new THREE.Mesh(P().geo('pc-ex-grass', () => new THREE.PlaneGeometry(26, 44)), M().get('ground', '#4a5628', { repeat: 16 }));
+    exGrass.rotation.x = -Math.PI / 2; exGrass.position.set(-30, 0.006, 0); exGrass.receiveShadow = true; c.group.add(exGrass);
+    ground(c, 'stone', '#3e3428', 9);
+    // checkered floor under the throne hall only
+    const hallFloor = new THREE.Mesh(
+      P().geo('pcfloor', () => new THREE.PlaneGeometry(12, 24)),
+      (() => {
+        const t = NS.Textures.checker('#4a3c2a', '#342a1c', 13, 512, 10);
+        const m = new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bumpMap, bumpScale: 0.04, roughnessMap: t.roughnessMap });
+        m.userData.story3dShared = true;
+        return m;
+      })()
+    );
+    hallFloor.rotation.x = -Math.PI / 2;
+    hallFloor.position.set(11, 0.012, 0);
+    hallFloor.receiveShadow = true;
+    c.group.add(hallFloor);
+
+    const wallMat = M().get('stone', '#3a3026');
+    const seg = (x, z, w, d, h, y) => {
+      const m = new THREE.Mesh(P().BOX(), wallMat);
+      m.scale.set(w, h || 5, d);
+      m.position.set(x, y !== undefined ? y : (h || 5) / 2, z);
+      m.receiveShadow = true;
+      c.group.add(m);
+      if (y === undefined) collide(c, x, z, w / 2, d / 2);
+    };
+    const wallX = (z, x1, x2, doors) => {
+      const pts = [x1, ...(doors || []).flatMap(d => [d - 1, d + 1]), x2];
+      for (let i = 0; i < pts.length; i += 2) if (pts[i + 1] - pts[i] > 0.05) seg((pts[i] + pts[i + 1]) / 2, z, pts[i + 1] - pts[i], 0.4);
+      (doors || []).forEach(d => seg(d, z, 2, 0.4, 1.6, 4.2)); // lintel over the door
+    };
+    const wallZ = (x, z1, z2, doors) => {
+      const pts = [z1, ...(doors || []).flatMap(d => [d - 1, d + 1]), z2];
+      for (let i = 0; i < pts.length; i += 2) if (pts[i + 1] - pts[i] > 0.05) seg(x, (pts[i] + pts[i + 1]) / 2, 0.4, pts[i + 1] - pts[i]);
+      (doors || []).forEach(d => seg(x, d, 0.4, 2, 1.6, 4.2));
+    };
+    // perimeter (the west wall has the main gate out to the courtyard)
+    wallX(-12, -17, 17); wallX(12, -17, 17);
+    wallZ(-17, -12, 12, [0]); wallZ(17, -12, 12);
+    // corridor (z −4…4): doors north into barracks/library, south into chapel/armory
+    wallX(-4, -17, 5, [-12, -1]);
+    wallX(4, -17, 5, [-12, -1]);
+    // throne hall west wall (door from the corridor) + room separators
+    wallZ(5, -12, 12, [0]);
+    wallZ(-7, -12, -4);
+    wallZ(-7, 4, 12);
+
+    // corridor: long runner + torch rows
+    add(c, P().rug({ w: 2.4, d: 20, color: '#5a1c1c', border: '#3a1212' }), -6, 0, Math.PI / 2);
+    [-15, -10, -5, 0].forEach(x => {
+      const t1 = add(c, P().torch({ light: true }), x, -3.55); t1.position.y = 2.2;
+      const t2 = add(c, P().torch({ light: x % 10 === 0 }), x, 3.55); t2.position.y = 2.2;
+    });
+
+    // throne hall — dais east, colonnade, windows, the court's colours
+    addC(c, P().throne(), 15.3, 0, -Math.PI / 2, 1.1, 1.3);
+    const glowL = new THREE.PointLight(0xffd670, 0.9, 11, 2);
+    glowL.position.set(14.4, 2.6, 0);
+    c.group.add(glowL);
+    add(c, P().rug({ w: 2.4, d: 9, color: '#5a1c1c', border: '#3a1212' }), 10.5, 0, Math.PI / 2);
+    [[8, -7], [8, 7], [14, -7], [14, 7]].forEach(([x, z]) => addC(c, P().column({ h: 7, color: '#443a2e' }), x, z, 0, 0.7, 0.7));
+    [-4, 4].forEach(z => {
+      const win = add(c, P().stainedWindow({ seed: 4 + z, shaft: z < 0, shaftH: 6 }), 16.6, z, -Math.PI / 2);
+      win.position.y = 3.2;
+      const b = add(c, P().banner({ color: z < 0 ? M().PALETTE.bannerGold : M().PALETTE.bannerGreen, h: 2.6, seed: 9 + z }), 16.7, z * 2.2);
+      b.position.y = 5.4; b.rotation.y = -Math.PI / 2;
+    });
+    addC(c, P().flag({ color: '#e4c058', trim: '#c8a040', seed: 1 }), 14.5, -3.4, 0.4, 0.25, 0.25);
+    addC(c, P().flag({ color: '#68a048', trim: '#c8a040', seed: 2 }), 14.5, 3.4, -0.4, 0.25, 0.25);
+    addC(c, P().boardTable({ topSize: 1.6, topY: 0.85, color: '#3c2c18' }), 8.5, -9.5, 0.3, 1, 1);
+
+    // barracks (NW): bunked crates, barrels, a rack against the wall
+    addC(c, P().crate({}), -15.5, -10.5, 0.2, 0.5, 0.5);
+    addC(c, P().crate({}), -14.3, -10.8, -0.3, 0.5, 0.5);
+    addC(c, P().barrel({}), -8.5, -10.8, 0, 0.4, 0.4);
+    addC(c, P().fence({ w: 3 }), -11, -11.4, 0, 1.5, 0.3);
+    const bt = add(c, P().torch({ light: true }), -12, -11.6); bt.position.y = 2.2;
+
+    // library (N-mid): reading table, candles, the chronicler's banner
+    addC(c, P().boardTable({ topSize: 1.8, topY: 0.85, color: '#33261a' }), -1, -8.5, 0.2, 1.1, 1.1);
+    add(c, P().candle({}), -1.6, -8.2).position.y = 0.9;
+    add(c, P().candle({}), -0.4, -8.8).position.y = 0.9;
+    const lb = add(c, P().banner({ color: M().PALETTE.bannerGold, h: 2.2, seed: 12 }), -1, -11.6);
+    lb.position.y = 4.6;
+    addC(c, P().crate({}), 3.5, -10.5, 0.4, 0.5, 0.5);
+
+    // chapel (SW): aisle rug, candle rows, a west window throwing light
+    add(c, P().rug({ w: 1.8, d: 6, color: '#3e4a42', border: '#2a342c' }), -12, 8);
+    [[-14.5, 6.2], [-9.5, 6.2], [-14.5, 10], [-9.5, 10]].forEach(([x, z]) => {
+      const cd = add(c, P().candle({}), x, z); cd.position.y = 0.0; cd.scale.setScalar(2.2);
+    });
+    const cw = add(c, P().stainedWindow({ seed: 11, shaft: true, shaftH: 6 }), -16.6, 8, Math.PI / 2);
+    cw.position.y = 3.2;
+
+    // armory (S-mid): the royal armory — stall counter, barrels, crates
+    addC(c, P().stall({ w: 3 }), -1, 9.8, Math.PI, 1.6, 1 );
+    addC(c, P().barrel({}), 3.4, 10.6, 0, 0.4, 0.4);
+    addC(c, P().crate({}), 2.3, 10.9, 0.5, 0.5, 0.5);
+    addC(c, P().crate({}), -4.8, 10.6, -0.2, 0.5, 0.5);
+
+    // ════ EXTERIOR — walk out the west gate into the courtyard & country ══
+    const exWall = (x, z, w, d, h) => {
+      const m = new THREE.Mesh(P().BOX(), wallMat);
+      m.scale.set(w, h || 4.5, d); m.position.set(x, (h || 4.5) / 2, z);
+      m.castShadow = true; m.receiveShadow = true; c.group.add(m);
+      collide(c, x, z, w / 2, d / 2);
+    };
+    // curtain walls enclosing the courtyard, with a west gatehouse (gap z-2..2)
+    exWall(-23, -14, 13, 0.6); exWall(-23, 14, 13, 0.6);
+    exWall(-29.5, -8.5, 0.6, 11); exWall(-29.5, 8.5, 0.6, 11);
+    [[-29.5, -3], [-29.5, 3]].forEach(([x, z]) => {
+      const tw = new THREE.Mesh(P().CYL(), wallMat); tw.scale.set(1.3, 7, 1.3); tw.position.set(x, 3.5, z);
+      tw.castShadow = true; c.group.add(tw); collide(c, x, z, 0.8, 0.8);
+    });
+
+    // courtyard well
+    {
+      const well = new THREE.Group();
+      const w1 = new THREE.Mesh(P().geo('pc-well', () => new THREE.CylinderGeometry(0.8, 0.85, 0.8, 12)), M().get('stone', '#48382a'));
+      w1.position.y = 0.4; w1.castShadow = w1.receiveShadow = true; well.add(w1);
+      const wp = new THREE.Mesh(P().CYL(), M().get('wood', '#2a2018')); wp.scale.set(0.07, 1.6, 0.07); wp.position.y = 1.2; well.add(wp);
+      const wr = new THREE.Mesh(P().CONE(), M().get('wood', '#3a2a1a')); wr.scale.set(1.4, 0.6, 1.4); wr.position.y = 2.1; wr.castShadow = true; well.add(wr);
+      addC(c, well, -21, 6, 0, 1, 1);
+    }
+
+    // BLACKSMITH (courtyard SW): forge with glowing coals, anvil, smoke
+    {
+      const forge = new THREE.Mesh(P().BOX(), M().get('stone', '#3a342c'));
+      forge.scale.set(1.6, 1.0, 1.2); forge.position.set(-24, 0.5, -6); forge.castShadow = forge.receiveShadow = true;
+      c.group.add(forge); collide(c, -24, -6, 0.9, 0.7);
+      const coals = new THREE.Mesh(P().BOX(), M().flat('#ff6a1a', { emissive: '#ff5a10', emissiveIntensity: 1.7, roughness: 0.6 }));
+      coals.scale.set(0.7, 0.12, 0.5); coals.position.set(-24, 1.05, -6); c.group.add(coals);
+      const fl = new THREE.PointLight(0xff7a30, 1.4, 7, 2); fl.position.set(-24, 1.4, -6); c.group.add(fl);
+      add(c, NS.FX.smokeColumn({ opacity: 0.16 }), -24, -6.6).position.y = 1.4;
+      const anvil = new THREE.Group();
+      const ab = new THREE.Mesh(P().BOX(), M().get('metal', '#3a3e44')); ab.scale.set(0.5, 0.18, 0.22); ab.position.y = 0.62; anvil.add(ab);
+      const as = new THREE.Mesh(P().BOX(), M().get('metal', '#3a3e44')); as.scale.set(0.16, 0.42, 0.16); as.position.y = 0.36; anvil.add(as);
+      anvil.traverse(o => { o.castShadow = true; });
+      addC(c, anvil, -22, -4.6, 0, 0.4, 0.3);
+      add(c, P().crate({}), -25.6, -4.2); add(c, P().barrel({}), -25.8, -7.4); // walk-over
+    }
+
+    // SHOPS (courtyard NW): market stalls + walk-over goods
+    addC(c, P().stall({ color: '#8a4a3a' }), -24, 7, 0.2, 1.1, 0.6);
+    addC(c, P().stall({ color: '#3a5a4a' }), -21, 9.5, -0.2, 1.1, 0.6);
+    for (let i = 0; i < 3; i++) add(c, P().crate({ size: 0.5 }), -26 + i * 0.8, 8.5);
+
+    // guards posted at the inner gate and the outer gatehouse (static, watching)
+    const postGuard = (x, z, rotY) => {
+      const guard = NS.Figures.buildById('guard', { chapterId: 'ch1' });
+      guard.position.set(x, 0, z); guard.rotation.y = rotY; guard.userData.heading = rotY;
+      if (guard.userData.setWalking) guard.userData.setWalking(false);
+      c.group.add(guard);
+    };
+    postGuard(-18.6, -2.4, -Math.PI / 2); postGuard(-18.6, 2.4, -Math.PI / 2);
+    postGuard(-28.4, -4.6, Math.PI / 2); postGuard(-28.4, 4.6, Math.PI / 2);
+    [[-21, 0], [-26, -2.5], [-26, 2.5]].forEach(([x, z]) => add(c, P().lanternPost({ light: true }), x, z));
+
+    // FARMS (beyond the west gatehouse): fenced crop plots, barn, cottage
+    for (let p = 0; p < 3; p++) {
+      const fz = -7 + p * 7;
+      addC(c, P().fence({ len: 6 }), -35, fz - 2.4, 0, 3, 0.2);
+      addC(c, P().fence({ len: 6 }), -35, fz + 2.4, 0, 3, 0.2);
+      for (let r = 0; r < 5; r++) for (let cc = 0; cc < 3; cc++) { // crop rows — walk-over
+        const crop = new THREE.Mesh(P().BOX(), M().get('fabric', cc % 2 ? '#5a7a2a' : '#6a8a32', { seed: 90 + r }));
+        crop.scale.set(0.5, 0.4 + (r % 2) * 0.12, 0.3); crop.position.set(-38 + r * 1.3, 0.22, fz - 1.6 + cc * 1.6);
+        crop.castShadow = true; c.group.add(crop);
+      }
+    }
+    addC(c, P().building({ w: 5.5, d: 5, h: 4.2, wallColor: '#6a4a30', roofColor: '#3a2418', windows: 1, doorSide: 'e' }), -38, -12, 0, 2.7, 2.5); // barn
+    addC(c, P().building({ w: 4, d: 4, h: 3, wallColor: '#7a6a4a', roofColor: '#3a2a1a', windows: 2, glowWindows: true, doorSide: 'e', chimney: true }), -37, 12, 0, 2, 2); // cottage
+    add(c, NS.FX.smokeColumn({}), -36, 12).position.y = 4.2;
+    for (let i = 0; i < 4; i++) add(c, P().barrel({ h: 0.7 }), -33 + (i % 2) * 1.2, -3 + Math.floor(i / 2) * 1.0); // hay, walk-over
+
+    // farmers + citizens working the country (ambient, idle)
+    [['#5a4a3a', -36, -1, 0.6], ['#4a3e50', -34, 5, -0.5], ['#6a5a3a', -39, 9, 0.2], ['#4a4438', -32, -9, 1.2]].forEach(([col, x, z, r]) => {
+      const f = NS.Figures.build({ kind: 'human', color: col }, { scale: 0.96 });
+      f.position.set(x, 0, z); f.rotation.y = r; f.userData.heading = r;
+      c.group.add(f);
+    });
+    add(c, NS.FX.critters({ style: 'chicken', count: 5, range: 7 }), -34, 2);
+    add(c, NS.FX.birds({ count: 4, radius: 13, h: 10 }), -28, 0);
+
+    // NPC stations: posted through the rooms; boss + merchant keep the
+    // last two slots (the populate order relies on it). The merchant is now
+    // the blacksmith out in the courtyard.
+    c.npcSlots = [
+      { x: -12, z: -8, facing: 0.6 },           // barracks
+      { x: -3.5, z: -8, facing: -0.4 },         // library
+      { x: -12, z: 7, facing: -0.6 },           // chapel
+      { x: -8.5, z: 0, facing: Math.PI / 2 },   // corridor west
+      { x: 2, z: 2.4, facing: -0.5 },           // corridor east
+      { x: 8, z: -4.5, facing: -0.4 },          // hall, north wing
+      { x: 12.6, z: 0, facing: -Math.PI / 2 },  // boss — before the throne
+      { x: -22.5, z: -5, facing: -Math.PI / 2 }, // merchant — the blacksmith
+    ];
+    return finish(c, {
+      boardAnchor: { x: 10, z: 3, rotY: 0 },
+      spawn: { x: -11.5, z: 0.4, facing: Math.PI / 2 },
+      signpostPos: { x: -15.4, z: 3.2, rotY: -Math.PI / 4 }, // tucked into the SW corner, off the walkway
+      stage: { center: [10, 0, -1], right: [1, 0, 0], forward: [0, 0, 1], width: 10, depth: 6 },
+      tableStyle: 'stone',
+      camera: { hubHeight: 2.9, hubDist: 4.4 },
     });
   };
 
@@ -262,6 +593,7 @@
       sun: { color: '#e8e4d0', i: 0.8, pos: [10, 16, 8] },
     });
     ground(c, 'ground', '#42301e', 6);
+    backdrop(c, { ground: '#3a2a1a', hillColor: '#2c3022', style: 'castle' });
     // Crenellated wall along the back
     const wallM = M().get('stone', '#303028');
     const wall = new THREE.Mesh(P().BOX(), wallM);
@@ -287,6 +619,8 @@
     [[-3, 2, 0], [3, 2, 0], [0, 4.6, Math.PI / 2], [0, -0.6, Math.PI / 2]].forEach(([x, z, r]) => {
       addC(c, P().fence({ len: 5.6 }), x, z, r, r ? 0.2 : 2.8, r ? 2.8 : 0.2);
     });
+    add(c, NS.FX.birds({ count: 3, radius: 7, h: 7 }), 0, 0);
+    add(c, NS.FX.critters({ style: 'rabbit', count: 1, range: 4 }), -5, 3);
     // Morning mist over the yard (the 2D scene's 6 mist puffs)
     add(c, NS.FX.mist({ w: c.width - 4, d: c.depth - 4, count: 4 }), 0, 0);
     add(c, P().scatter({ w: c.width - 3, d: c.depth - 3, count: 20, clear: 3, grassColor: '#5a5238', grassColor2: '#4a4430' }), 0, 0);
@@ -306,6 +640,7 @@
       sun: { color: '#d8d8cc', i: 0.55, pos: [-8, 14, 6] },
     });
     ground(c, 'ground', '#3a2e20', 7);
+    backdrop(c, { ground: '#383022', hillColor: '#3e4a2c', style: 'forest', treeColor: '#26341f' });
     // Dirt road running into the distance
     const road = new THREE.Mesh(P().geo('road', () => new THREE.PlaneGeometry(3.4, 1)), M().get('ground', '#6a5840', { seed: 21 }));
     road.rotation.x = -Math.PI / 2; road.scale.y = c.depth; road.position.y = 0.02;
@@ -323,6 +658,10 @@
     // Farmhouse (2D 0.62–0.66) with smoking chimney
     addC(c, P().building({ w: 4, d: 3.2, h: 2.6, wallColor: '#5a4a36', roofColor: '#2a1e18', windows: 1, glowWindows: true, chimney: true }), fx(c, 0.64), -5.5, -0.3, 2.2, 1.8);
     add(c, P().scatter({ w: c.width - 4, d: c.depth - 4, count: 30, clear: 2.5 }), 0, 0);
+    addC(c, P().windmill({ h: 5 }), -c.width / 2 + 4, -c.depth / 2 + 4, 0.5, 1.4, 1.4);
+    add(c, NS.FX.water({ w: 1.6, l: c.depth - 2, color: '#3e6e8e' }), c.width / 2 - 4, 0);
+    add(c, NS.FX.critters({ style: 'chicken', count: 3, range: 5 }), fx(c, 0.62), -3);
+    add(c, NS.FX.birds({ count: 4, radius: 9, h: 9 }), 0, 0);
     return finish(c, {
       stage: { center: [0, 0, 3], right: [1, 0, 0], forward: [0, 0, 1], width: 11, depth: 5 },
       boardAnchor: { x: 0, z: 3.5 },
@@ -338,6 +677,7 @@
       sun: { color: '#b0a89c', i: 0.4, pos: [4, 12, -6] },
     });
     ground(c, 'ground', '#2e2416', 7);
+    backdrop(c, { ground: '#2a2014', hillColor: '#2a241c', style: 'ashen' });
     const road = new THREE.Mesh(P().geo('road', () => new THREE.PlaneGeometry(3.4, 1)), M().get('ground', '#605040', { seed: 33 }));
     road.rotation.x = -Math.PI / 2; road.scale.y = c.depth; road.position.y = 0.02;
     road.receiveShadow = true;
@@ -358,6 +698,8 @@
       ruin.add(m);
     });
     addC(c, ruin, fx(c, 0.7), -3.5, -0.2, 1.6, 1.5);
+    add(c, NS.FX.critters({ style: 'crow', count: 3, range: 5 }), fx(c, 0.6), -2);
+    add(c, NS.FX.birds({ count: 2, radius: 8, h: 7, color: '#0e0c0a' }), 0, 0);
     return finish(c, {
       stage: { center: [0, 0, 3], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 5 },
       boardAnchor: { x: 0, z: 3 },
@@ -369,60 +711,121 @@
   // Hub for chapter 2 (L19420).
   BUILDERS.army_camp_night = function (opts) {
     const hub = opts && opts.hub;
-    const c = ctx(hub ? 32 : 24, hub ? 28 : 20);
+    const c = ctx(hub ? 46 : 24, hub ? 40 : 20);
     atmosphere(c, {
-      sky: '#10141a', fog: '#10141a', fogNear: hub ? 14 : 10, fogFar: hub ? 40 : 30,
-      hemi: ['#3a4a66', '#222820', 0.95],
-      sun: { color: '#8ca0c8', i: 0.32, pos: [-6, 18, -8], shadow: false }, // moonlight
+      sky: '#0c1016', fog: '#0a0e14', fogNear: hub ? 16 : 10, fogFar: hub ? 54 : 30,
+      hemi: ['#34465f', '#1c2018', hub ? 0.85 : 0.8],  // darker camp; firelight does the work
+      sun: { color: '#8ca0c8', i: hub ? 0.34 : 0.3, pos: [-8, 20, -10], shadow: hub, shadowSize: 28 },
     });
-    ground(c, 'ground', '#222a20', 8);
-    // Star field + moon (the 2D scene draws 40 drifting stars)
-    add(c, NS.FX.stars({ count: 90, radius: hub ? 26 : 20, moon: true }), 0, 0);
-    // Tents at the 2D fractions 0.22/0.35/0.6/0.74 — two glow from inside
-    [[0.22, -4], [0.35, -6.5], [0.6, -6], [0.74, -3.5]].forEach(([f, z], i) => {
-      addC(c, P().tent({ w: 2.4 + (i % 2) * 0.5, d: 2.8, h: 1.7, color: '#2a2218', glow: i % 2 === 0 }), fx(c, f), z, (i - 1.5) * 0.3, 1.4, 1.5);
-    });
-    // Central campfire (the scene's anchor light)
-    add(c, P().campfire({ light: true, intensity: 2.8, range: 18, embers: 14 }), 0, 0);
-    collide(c, 0, 0, 0.8, 0.8);
-    // Log seats around the fire
-    for (let i = 0; i < 3; i++) {
-      const a = (i / 3) * Math.PI * 2 + 0.5;
+    ground(c, 'ground', '#222a20', 9);
+    backdrop(c, { ground: '#1e261c', hillColor: '#1c2418', style: 'forest', treeColor: '#141c14' });
+    add(c, NS.FX.stars({ count: hub ? 130 : 90, radius: hub ? 38 : 20, moon: true }), 0, 0);
+
+    // central campfire + log seats (shared by both sizes)
+    add(c, P().campfire({ light: true, intensity: hub ? 3.2 : 2.8, range: hub ? 20 : 18, embers: 14 }), 0, 0);
+    collide(c, 0, 0, 0.7, 0.7);
+    for (let i = 0; i < (hub ? 4 : 3); i++) {
+      const a = (i / (hub ? 4 : 3)) * Math.PI * 2 + 0.5;
       const log = new THREE.Mesh(P().CYL(), M().get('wood', '#3a2a1a'));
-      log.scale.set(0.18, 1.4, 0.18);
-      log.rotation.z = Math.PI / 2; log.rotation.y = a;
-      log.position.set(Math.cos(a) * 1.8, 0.18, Math.sin(a) * 1.8);
-      log.castShadow = true;
-      c.group.add(log);
-      collide(c, log.position.x, log.position.z, 0.7, 0.3);
+      log.scale.set(0.18, 1.4, 0.18); log.rotation.z = Math.PI / 2; log.rotation.y = a;
+      log.position.set(Math.cos(a) * 1.9, 0.18, Math.sin(a) * 1.9); log.castShadow = true;
+      c.group.add(log); // walk-over (no collider)
     }
-    // The army marches under Aurveld gold — a war flag by the fire
-    addC(c, P().flag({ color: '#e4c058', trim: '#c8a040', seed: 3 }), 3.2, -1.5, 0.6, 0.25, 0.25);
-    // Supply crates (2D 0.05)
-    addC(c, P().crate({ size: 0.7 }), fx(c, 0.06), 2, 0.3, 0.5, 0.5);
-    addC(c, P().crate({ size: 0.5 }), fx(c, 0.06) + 0.8, 2.2, 0.8, 0.4, 0.4);
-    addC(c, P().barrel({}), fx(c, 0.06) + 0.4, 1, 0, 0.4, 0.4);
-    // Perimeter lanterns
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
-      add(c, P().lanternPost({ light: i < 2 }), sx * (c.width / 2 - 2.5), sz * (c.depth / 2 - 2.5));
+    addC(c, P().flag({ color: '#e4c058', trim: '#c8a040', seed: 3 }), 2.8, -1.6, 0.6, 0.2, 0.2);
+
+    if (!hub) {
+      // intimate camp for the fight
+      [[0.25, -4], [0.4, -6], [0.62, -6], [0.76, -4]].forEach(([f, z], i) =>
+        addC(c, P().tent({ w: 2.4, d: 2.8, h: 1.7, color: '#2a2218', glow: i % 2 === 0 }), fx(c, f), z, (i - 1.5) * 0.3, 1.3, 1.4));
+      add(c, P().crate({ size: 0.7 }), fx(c, 0.08), 2); // walk-over
+      return finish(c, {
+        spawn: { x: 0, z: c.depth / 2 - 3.5, facing: Math.PI },
+        stage: { center: [0, 0, 2.5], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 5.5 },
+        boardAnchor: { x: 2.8, z: 2.2, rotY: 0.3 }, camera: { hubHeight: 3.2 },
+      });
+    }
+
+    // ── BIG WAR CAMP ────────────────────────────────────────────────────
+    const pathMat = M().get('ground', '#3a3022', { seed: 23 });
+    const path = (x, z, w, d, rot) => {
+      const p = new THREE.Mesh(P().geo(`c2path|${w}|${d}`, () => new THREE.PlaneGeometry(w, d)), pathMat);
+      p.rotation.x = -Math.PI / 2; if (rot) p.rotation.z = rot;
+      p.position.set(x, 0.015, z); p.receiveShadow = true; c.group.add(p);
+    };
+    path(0, 6, 3.4, 28); path(0, -6, 24, 3); path(0, 8, 22, 3);
+
+    // command tent behind the fire + a war banner
+    addC(c, P().tent({ w: 4, d: 4.6, h: 2.5, color: '#2e261a', glow: true }), 0, -7, 0, 2, 2.3);
+
+    // tent rows forming the camp (left + right wings), small fires between
+    const tentRow = (baseX, dir) => {
+      for (let i = 0; i < 4; i++) {
+        const z = -8 + i * 4.6;
+        addC(c, P().tent({ w: 2.4 + (i % 2) * 0.4, d: 2.8, h: 1.7, color: '#2a2218', glow: i % 2 === 0 }), baseX, z, dir * 0.18, 1.3, 1.4);
+        if (i % 2 === 1) add(c, P().campfire({ light: true, intensity: 1.7, range: 9 }), baseX - dir * 2.4, z);
+      }
+    };
+    tentRow(-15, 1); tentRow(-10, 1); tentRow(15, -1); tentRow(10, -1);
+
+    // supply depot (walk-over crates/barrels) + drill posts (walk-over)
+    for (let i = 0; i < 7; i++) add(c, P().crate({ size: 0.6 + (i % 2) * 0.1 }), -8 + (i % 4) * 0.9, 10 + Math.floor(i / 4) * 0.9);
+    add(c, P().barrel({}), -10, 10.4); add(c, P().barrel({}), -9.3, 11.1);
+    [[7, 10], [8.6, 10.5], [7.8, 11.4]].forEach(([x, z]) => {
+      const dm = new THREE.Mesh(P().CYL(), M().get('wood', '#1a1410')); dm.scale.set(0.12, 1.6, 0.12); dm.position.set(x, 0.8, z); dm.castShadow = true; c.group.add(dm);
+      const dh = new THREE.Mesh(P().SPHERE(), M().get('fabric', '#3a3026')); dh.scale.set(0.28, 0.28, 0.28); dh.position.set(x, 1.7, z); c.group.add(dh);
     });
-    if (hub) {
-      c.npcSlots = [
-        { x: -7, z: -2, facing: 1.1 },
-        { x: 6.5, z: -3, facing: -1.2 },
-        { x: -4, z: 5, facing: 0.5 },
-        { x: 5, z: 5, facing: -0.6 },
-        { x: -9, z: 2, facing: Math.PI / 2 },
-        { x: 9, z: 1, facing: -Math.PI / 2 },
-        { x: 0, z: -9, facing: 0 },               // boss — road edge, north
-        { x: 10, z: 7, facing: -Math.PI / 3 },    // merchant
-      ];
+
+    // ── MESS AREA (north-west): cook fire, cauldron, long table + benches ──
+    add(c, P().campfire({ light: true, intensity: 1.8, range: 9 }), -16, -13);
+    {
+      const cauldron = new THREE.Mesh(P().geo('c2-cauldron', () => new THREE.CylinderGeometry(0.42, 0.32, 0.5, 12)), M().get('metal', '#26282c'));
+      cauldron.position.set(-16, 0.7, -13); cauldron.castShadow = true; c.group.add(cauldron); collide(c, -16, -13, 0.4, 0.4);
+      const tripod = new THREE.Mesh(P().CYL(), M().get('wood', '#2a2018')); tripod.scale.set(0.04, 1.4, 0.04); tripod.position.set(-16, 0.7, -13.6); tripod.rotation.x = 0.3; c.group.add(tripod);
+      addC(c, P().boardTable({ topSize: 3.2, topY: 0.8, color: '#3a2a18' }), -16, -16.5, Math.PI / 2, 1.8, 0.9);
+      [-1.2, 1.2].forEach(dz => { const bench = new THREE.Mesh(P().BOX(), M().get('wood', '#33261a')); bench.scale.set(3, 0.18, 0.4); bench.position.set(-16, 0.32, -16.5 + dz); bench.castShadow = true; c.group.add(bench); });
+      for (let i = 0; i < 3; i++) add(c, P().crate({ size: 0.5 }), -13.5 + i * 0.7, -15.5); // walk-over
     }
+
+    // ── INFIRMARY (north-east): glowing tent, cots, a healer's table ──
+    addC(c, P().tent({ w: 3.2, d: 3.6, h: 2.0, color: '#3a342a', glow: true }), 16, -14, -0.3, 1.6, 1.8);
+    [[-0.9, -12.6], [0.9, -12.4]].forEach(([dx, z]) => {
+      const cot = new THREE.Mesh(P().BOX(), M().get('fabric', '#6a6256', { seed: 95 })); cot.scale.set(0.7, 0.18, 1.6); cot.position.set(16 + dx, 0.22, z); cot.castShadow = true; c.group.add(cot);
+    });
+    add(c, P().candle({ light: true, intensity: 0.6, range: 5 }), 14.4, -12).position.y = 0.8;
+    add(c, P().barrel({}), 18, -12.4); add(c, P().barrel({}), 13.6, -13.4); // supplies (walk-over)
+
+    // ── HORSE PADDOCK (south): fenced enclosure, hay, two horses ──
+    [[-3, 0], [3, 0], [0, -2.4], [0, 2.4]].forEach(([dx, dz], i) => {
+      addC(c, P().fence({ len: 6 }), -16 + dx, 15 + dz, i < 2 ? Math.PI / 2 : 0, i < 2 ? 0.3 : 3, i < 2 ? 3 : 0.3);
+    });
+    if (NS.Figures.buildHorse) {
+      [[-17, 14.6, 0.5], [-15, 15.6, -0.8]].forEach(([x, z, r]) => {
+        const h = NS.Figures.buildHorse({ color: '#43301f' }); h.position.set(x, 0, z); h.rotation.y = r; c.group.add(h);
+      });
+    }
+    for (let i = 0; i < 3; i++) add(c, P().barrel({ h: 0.6 }), -18 + i * 0.9, 16.4); // hay (walk-over)
+
+    // perimeter torches (light) ring the camp — walk-over
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      const t = add(c, P().torch({ light: i % 2 === 0, intensity: 0.95 }), Math.cos(a) * (c.width / 2 - 3), Math.sin(a) * (c.depth / 2 - 3) * 0.9);
+      t.position.y = 0.9;
+    }
+    add(c, NS.FX.critters({ style: 'crow', count: 2, range: 6 }), -11, 13);
+    add(c, NS.FX.critters({ style: 'chicken', count: 3, range: 5 }), -14, 16);
+
+    c.npcSlots = [
+      { x: 0, z: -2.6, facing: 0 },
+      { x: -12, z: -1, facing: 1 }, { x: 12, z: -2, facing: -1 },
+      { x: -6, z: 5, facing: 0.5 }, { x: 6, z: 5, facing: -0.5 },
+      { x: 0, z: -12, facing: 0 },               // boss — command end
+      { x: 11, z: 10, facing: -Math.PI / 3 },    // merchant — supply
+    ];
     return finish(c, {
-      spawn: { x: 0, z: hub ? c.depth / 2 - 6 : c.depth / 2 - 3.5, facing: Math.PI },
+      spawn: { x: 0, z: c.depth / 2 - 4, facing: Math.PI },
       stage: { center: [0, 0, 2.5], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 5.5 },
       boardAnchor: { x: 2.8, z: 2.2, rotY: 0.3 },
-      camera: { hubHeight: 3.2 },
+      camera: { hubHeight: 3.4, hubDist: 6 },
     });
   };
 
@@ -434,6 +837,7 @@
       hemi: ['#2c3850', '#0a0c10', 0.75],
     });
     ground(c, 'ground', '#0c0e0c', 7);
+    backdrop(c, { ground: '#0b0d0b', hillColor: '#101410' });
     add(c, NS.FX.stars({ count: 70, radius: 18 }), 0, 0);
     // Torch line receding (2D 0.7→0.9)
     for (let i = 0; i < 5; i++) {
@@ -460,6 +864,7 @@
       sun: { color: '#f0ead8', i: 0.85, pos: [12, 18, 6] },
     });
     ground(c, 'ground', '#4a5830', 7);
+    backdrop(c, { ground: '#46522e', hillColor: '#3c4c2c', style: 'forest', treeColor: '#2c3c24' });
     const road = new THREE.Mesh(P().geo('road', () => new THREE.PlaneGeometry(3.4, 1)), M().get('ground', '#706050', { seed: 39 }));
     road.rotation.x = -Math.PI / 2; road.scale.y = c.depth; road.position.y = 0.02;
     road.receiveShadow = true;
@@ -486,6 +891,9 @@
     arm.scale.set(4, 0.12, 0.12); arm.position.set(1, 1.05, -3.4); arm.castShadow = true;
     c.group.add(arm);
     add(c, P().scatter({ w: c.width - 4, d: c.depth - 4, count: 32, clear: 2.5, grassColor: '#3e5230', grassColor2: '#314424' }), 0, 0);
+    add(c, NS.FX.water({ w: 2.6, l: c.width - 2, color: '#3a6a8a', angle: Math.PI / 2 }), 0, -c.depth / 2 + 3.2);
+    add(c, NS.FX.critters({ style: 'rabbit', count: 2, range: 5 }), -6, 3);
+    add(c, NS.FX.birds({ count: 3, radius: 8, h: 8 }), 0, 0);
     return finish(c, {
       stage: { center: [0, 0, 2.5], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 5 },
       boardAnchor: { x: 0, z: 2.5 },
@@ -496,67 +904,112 @@
   // stalls, townsfolk. Hub for chapter 3 (L19490).
   BUILDERS.valdris_border_town = function (opts) {
     const hub = opts && opts.hub;
-    const c = ctx(hub ? 32 : 24, hub ? 26 : 18);
+    const c = ctx(hub ? 46 : 24, hub ? 40 : 18);
     atmosphere(c, {
-      sky: '#d8a878', fog: '#c89868', fogNear: hub ? 16 : 12, fogFar: hub ? 44 : 34,
-      hemi: ['#e0b080', '#706050', 0.7],
-      sun: { color: '#ffb060', i: 0.7, pos: [-14, 8, 4], shadowSize: hub ? 20 : 14 }, // low sunset sun
+      sky: '#d8a878', fog: '#c89868', fogNear: hub ? 18 : 12, fogFar: hub ? 56 : 34,
+      hemi: ['#e0b080', '#706050', 0.78],
+      sun: { color: '#ffb060', i: 0.7, pos: [-16, 9, 5], shadow: true, shadowSize: hub ? 26 : 14 },
     });
-    ground(c, 'ground', '#706050', 7);
-    // Two building rows flanking a central street (2D: 0–0.45 and 0.55–1)
-    const rowZ = -c.depth / 2 + 3;
-    for (let side = 0; side < 2; side++) {
-      for (let i = 0; i < (hub ? 3 : 2); i++) {
-        const bw = 4.6, x = (side ? 1 : -1) * (c.width / 4 + 1.4) + (i - 1) * (side ? 1 : -1) * 0.4;
-        const z = rowZ + i * (bw + 1.6);
-        const b = P().building({
-          w: bw, d: 4, h: 3 + (i % 2) * 0.7,
-          wallColor: '#484038', roofColor: '#2a2018',
-          windows: 2, glowWindows: true, doorSide: side ? 'w' : 'e',
-          chimney: i % 2 === 0,
-        });
-        addC(c, b, x, z, (side ? -1 : 1) * 0.04, bw / 2, 2.2);
+    ground(c, 'ground', '#6a5a48', 8);
+    backdrop(c, { ground: '#5e5444', hillColor: '#4c4838', style: 'town' });
+    add(c, NS.FX.birds({ count: hub ? 5 : 3, radius: hub ? 14 : 10, h: 9 }), 0, 0);
+
+    // a well (shared) — town landmark
+    const buildWell = (wx, wz) => {
+      const well = new THREE.Group();
+      const wellWall = new THREE.Mesh(P().geo('well', () => new THREE.CylinderGeometry(0.8, 0.85, 0.8, 12)), M().get('stone', '#48382a'));
+      wellWall.position.y = 0.4; wellWall.castShadow = true; wellWall.receiveShadow = true; well.add(wellWall);
+      const wp = new THREE.Mesh(P().CYL(), M().get('wood', '#2a2018')); wp.scale.set(0.07, 1.6, 0.07); wp.position.y = 1.2; well.add(wp);
+      const wr = new THREE.Mesh(P().CONE(), M().get('wood', '#3a2a1a')); wr.scale.set(1.4, 0.6, 1.4); wr.position.y = 2.1; wr.castShadow = true; well.add(wr);
+      addC(c, well, wx, wz, 0, 1, 1);
+    };
+
+    if (!hub) {
+      // small border street for the fight
+      for (let side = 0; side < 2; side++) for (let i = 0; i < 2; i++) {
+        addC(c, P().building({ w: 4.6, d: 4, h: 3 + (i % 2) * 0.7, wallColor: '#484038', roofColor: '#2a2018', windows: 2, glowWindows: true, doorSide: side ? 'w' : 'e', chimney: i % 2 === 0 }),
+          (side ? 1 : -1) * 7.4, -c.depth / 2 + 3 + i * 6, 0, 2.3, 2.2);
       }
+      buildWell(0, 2);
+      return finish(c, {
+        spawn: { x: 0, z: c.depth / 2 - 3, facing: Math.PI },
+        stage: { center: [0, 0, 3], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 5.5 },
+        boardAnchor: { x: 0, z: 3, rotY: 0 }, camera: { hubHeight: 3.3 },
+      });
     }
-    // Well at the town centre (2D 0.5/0.82)
-    const well = new THREE.Group();
-    const wellWall = new THREE.Mesh(P().geo('well', () => new THREE.CylinderGeometry(0.8, 0.85, 0.8, 12)), M().get('stone', '#48382a'));
-    wellWall.position.y = 0.4; wellWall.castShadow = true; wellWall.receiveShadow = true;
-    well.add(wellWall);
-    const wellPost = new THREE.Mesh(P().CYL(), M().get('wood', '#2a2018'));
-    wellPost.scale.set(0.07, 1.6, 0.07); wellPost.position.set(0, 1.2, 0);
-    well.add(wellPost);
-    const wellRoof = new THREE.Mesh(P().CONE(), M().get('wood', '#3a2a1a'));
-    wellRoof.scale.set(1.4, 0.6, 1.4); wellRoof.position.y = 2.1; wellRoof.castShadow = true;
-    well.add(wellRoof);
-    addC(c, well, 0, 2, 0, 1, 1);
-    // Market stalls (2D 0.58/0.63)
-    addC(c, P().stall({ color: '#8a4a3a' }), fx(c, 0.58) * 0.5, 5.5, 0.3, 1.1, 0.6);
-    addC(c, P().stall({ color: '#3a5a4a' }), fx(c, 0.63) * 0.5 + 2.4, 6.2, -0.2, 1.1, 0.6);
-    // Lantern posts down the street
-    [[-2.5, -2], [2.5, 0], [-2.5, 4]].forEach(([x, z], i) => {
-      addC(c, P().lanternPost({ light: i < 2 }), x, z, 0, 0.25, 0.25);
+
+    // ── BIG TOWN ────────────────────────────────────────────────────────
+    const pathMat = M().get('ground', '#8a7458', { seed: 39 });
+    const street = (x, z, w, d) => {
+      const p = new THREE.Mesh(P().geo(`c3st|${w}|${d}`, () => new THREE.PlaneGeometry(w, d)), pathMat);
+      p.rotation.x = -Math.PI / 2; p.position.set(x, 0.015, z); p.receiveShadow = true; c.group.add(p);
+    };
+    street(0, 0, 4, 36);    // main street N–S
+    street(0, 6, 34, 5);    // market cross-street E–W
+
+    // building rows lining the main street (inner ±6.5, outer ±15)
+    const townBuilding = (x, z, w, h, doorSide, chimney) => {
+      addC(c, P().building({ w, d: 4.2, h, wallColor: '#4a423a', roofColor: '#2a2018', windows: 2, glowWindows: true, doorSide, chimney }), x, z, 0, w / 2, 2.3);
+      if (chimney) add(c, NS.FX.smokeColumn({}), x + w * 0.28, z).position.y = h + 1.6;
+    };
+    [[-15.5, 'e'], [-7, 'e'], [7, 'w'], [15.5, 'w']].forEach(([bx, door], col) => {
+      for (let i = 0; i < 3; i++) {
+        if (Math.abs(bx) < 8 && i === 1) continue; // gap onto the market street
+        townBuilding(bx, -13 + i * 8, 4.6 + (col % 2) * 1.4, 3 + (i % 2) * 0.9, door, i % 2 === 0);
+      }
     });
-    // Valdris blue flies over its own town
-    addC(c, P().flag({ color: '#3a5a8a', trim: '#aabdd4', seed: 4 }), -3.4, -6.5, 0.3, 0.25, 0.25);
-    addC(c, P().flag({ color: '#3a5a8a', trim: '#aabdd4', seed: 5 }), 3.6, 1.5, -0.5, 0.25, 0.25);
-    if (hub) {
-      c.npcSlots = [
-        { x: -6.5, z: -4, facing: 1 },
-        { x: 7, z: -3, facing: -1.1 },
-        { x: -5, z: 4.5, facing: 0.7 },
-        { x: 5.5, z: 3, facing: -0.8 },
-        { x: -8, z: 8, facing: Math.PI / 3 },
-        { x: 3, z: 8.5, facing: -0.3 },
-        { x: 0, z: -9.5, facing: 0 },             // boss — far end of the street
-        { x: 9.5, z: 7.5, facing: -Math.PI / 3 }, // merchant by the stalls
-      ];
+
+    // market square (centre): well + stalls + walk-over goods
+    buildWell(0, 12);
+    [['#8a4a3a', -4, 9], ['#3a5a4a', 4, 9.5], ['#7a6a3a', -3.5, 14], ['#5a4a6a', 4, 14.5]].forEach(([col, x, z]) =>
+      addC(c, P().stall({ color: col }), x, z, (x < 0 ? 0.2 : -0.2), 1.1, 0.6));
+    for (let i = 0; i < 6; i++) add(c, P().barrel({}), -1.5 + (i % 3) * 1.4, 11 + Math.floor(i / 3) * 1.0);  // walk-over
+    for (let i = 0; i < 4; i++) add(c, P().crate({ size: 0.5 }), 1 + (i % 2) * 0.8, 13 + Math.floor(i / 2) * 0.8); // walk-over
+
+    // ── TAVERN (west side): sign, lit windows, outdoor benches + barrels ──
+    addC(c, P().building({ w: 6, d: 5, h: 4, wallColor: '#5a4632', roofColor: '#2e2014', windows: 3, glowWindows: true, doorSide: 'e', chimney: true }), -16, 18, 0, 3, 2.6);
+    add(c, NS.FX.smokeColumn({}), -14.3, 18).position.y = 4.2;
+    { // hanging tavern sign on a post
+      const post = new THREE.Mesh(P().CYL(), M().get('wood', '#3a2a1a')); post.scale.set(0.1, 2.6, 0.1); post.position.set(-12.2, 1.3, 16.5); post.castShadow = true; c.group.add(post);
+      const sign = new THREE.Mesh(P().BOX(), M().get('wood', '#6a5238')); sign.scale.set(1.1, 0.7, 0.08); sign.position.set(-12.2, 2.1, 16.5); sign.castShadow = true; c.group.add(sign);
+      const mug = new THREE.Mesh(P().BOX(), M().get('metal', '#caa84c')); mug.scale.set(0.3, 0.4, 0.05); mug.position.set(-12.2, 2.1, 16.56); c.group.add(mug);
     }
+    [[-13.5, 19.5], [-11, 19.5]].forEach(([x, z]) => { const bench = new THREE.Mesh(P().BOX(), M().get('wood', '#43331f')); bench.scale.set(1.8, 0.18, 0.4); bench.position.set(x, 0.32, z); bench.castShadow = true; c.group.add(bench); });
+    add(c, P().barrel({}), -12.4, 20.4); add(c, P().barrel({}), -13.2, 20.6); // walk-over
+
+    // ── TOWN BLACKSMITH (east side): forge, anvil, glow ──
+    {
+      const forge = new THREE.Mesh(P().BOX(), M().get('stone', '#3a342c')); forge.scale.set(1.6, 1.0, 1.2); forge.position.set(14, 0.5, 16); forge.castShadow = forge.receiveShadow = true; c.group.add(forge); collide(c, 14, 16, 0.9, 0.7);
+      const coals = new THREE.Mesh(P().BOX(), M().flat('#ff6a1a', { emissive: '#ff5a10', emissiveIntensity: 1.7, roughness: 0.6 })); coals.scale.set(0.7, 0.12, 0.5); coals.position.set(14, 1.05, 16); c.group.add(coals);
+      const fl = new THREE.PointLight(0xff7a30, 1.3, 7, 2); fl.position.set(14, 1.4, 16); c.group.add(fl);
+      add(c, NS.FX.smokeColumn({ opacity: 0.16 }), 14, 15.4).position.y = 1.4;
+      const anvil = new THREE.Group(); const ab = new THREE.Mesh(P().BOX(), M().get('metal', '#3a3e44')); ab.scale.set(0.5, 0.18, 0.22); ab.position.y = 0.62; anvil.add(ab); const as = new THREE.Mesh(P().BOX(), M().get('metal', '#3a3e44')); as.scale.set(0.16, 0.42, 0.16); as.position.y = 0.36; anvil.add(as); anvil.traverse(o => { o.castShadow = true; }); addC(c, anvil, 16, 16.6, 0, 0.4, 0.3);
+      add(c, P().crate({}), 12.4, 17); // walk-over
+    }
+
+    // ── CHAPEL / SHRINE (far end): a small stone shrine + candles ──
+    addC(c, P().building({ w: 4.4, d: 4, h: 4.6, wallColor: '#5a5a5e', roofColor: '#3a3a40', windows: 1, doorSide: 's' }), 0, -16.5, 0, 2.2, 2.2);
+    { const cross = new THREE.Mesh(P().BOX(), M().get('stone', '#7a7a80')); cross.scale.set(0.16, 0.9, 0.16); cross.position.set(0, 5.0, -16.5); c.group.add(cross); const arm = new THREE.Mesh(P().BOX(), M().get('stone', '#7a7a80')); arm.scale.set(0.5, 0.16, 0.16); arm.position.set(0, 5.1, -16.5); c.group.add(arm); }
+    [[-1, -13.5], [1, -13.5]].forEach(([x, z]) => { const cd = add(c, P().candle({ light: true, intensity: 0.5, range: 4 }), x, z); cd.position.y = 0.0; cd.scale.setScalar(2.0); });
+
+    // lantern posts down the streets (walk-over, lit)
+    [[-2.4, -6], [2.4, -1], [-2.4, 4], [2.4, 9], [-8, 6], [8, 6], [-10, 18], [10, 18]].forEach(([x, z], i) => add(c, P().lanternPost({ light: i % 3 !== 2 }), x, z));
+    add(c, NS.FX.critters({ style: 'chicken', count: 4, range: 6 }), 3, 8);
+    addC(c, P().flag({ color: '#3a5a8a', trim: '#aabdd4', seed: 4 }), -3.6, -7, 0.3, 0.2, 0.2);
+    addC(c, P().flag({ color: '#3a5a8a', trim: '#aabdd4', seed: 5 }), 3.8, 2, -0.4, 0.2, 0.2);
+
+    c.npcSlots = [
+      { x: -4, z: -3, facing: 0.6 }, { x: 4, z: -4, facing: -0.6 },
+      { x: -4, z: 3, facing: 0.5 }, { x: 4, z: 4, facing: -0.5 },
+      { x: -8, z: 11, facing: Math.PI / 3 }, { x: -3, z: 16, facing: 0 },
+      { x: 0, z: -15, facing: 0 },               // boss — far end of the main street
+      { x: 8, z: 13, facing: -Math.PI / 2 },     // merchant — market
+    ];
     return finish(c, {
-      spawn: { x: 0, z: hub ? c.depth / 2 - 6 : c.depth / 2 - 3, facing: Math.PI },
+      spawn: { x: 0, z: c.depth / 2 - 4, facing: Math.PI },
       stage: { center: [0, 0, 3], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 5.5 },
       boardAnchor: { x: 0, z: 3, rotY: 0 },
-      camera: { hubHeight: 3.3 },
+      camera: { hubHeight: 3.5, hubDist: 6 },
     });
   };
 
@@ -600,48 +1053,115 @@
   // inlay, lone throne. Hub stage for chapter 4 (L19536).
   BUILDERS.valdris_throne_room = function (opts) {
     const hub = opts && opts.hub;
-    const c = ctx(hub ? 26 : 20, hub ? 24 : 17);
+    const c = ctx(hub ? 40 : 20, hub ? 34 : 17);
+    // The Pale Court — a cold, dark hall. Low ambient so the braziers and the
+    // shaft over the throne read as pools of light against deep shadow.
     atmosphere(c, {
-      sky: '#262c38', fog: '#2a3040', fogNear: hub ? 14 : 11, fogFar: hub ? 40 : 32,
-      hemi: ['#7a8ca6', '#3a404a', 1.05],
-      sun: { color: '#aebed8', i: 0.45, pos: [-6, 14, -4], shadowSize: hub ? 18 : 13 }, // pale shafts
+      sky: '#1c2430', fog: '#161d28', fogNear: hub ? 14 : 10, fogFar: hub ? 50 : 30,
+      hemi: ['#546881', '#222a34', hub ? 0.95 : 0.85],  // cold, moody, navigable
+      sun: { color: '#9ab0d8', i: 0.4, pos: [-6, 18, -4], shadow: hub, shadowSize: hub ? 24 : 13 },
     });
-    // Pale stone floor with elliptical inlay rings
-    ground(c, 'stone', '#3a404a', 6);
-    const ring = new THREE.Mesh(P().geo('vt-ring', () => new THREE.RingGeometry(2.2, 2.35, 48)), M().flat('#404858', { roughness: 0.6 }));
-    ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.02, 1);
-    c.group.add(ring);
-    const ring2 = new THREE.Mesh(P().geo('vt-ring2', () => new THREE.RingGeometry(3.2, 3.32, 48)), M().flat('#404858', { roughness: 0.6 }));
-    ring2.rotation.x = -Math.PI / 2; ring2.position.set(0, 0.02, 1);
-    c.group.add(ring2);
-    room(c, 8, M().get('stone', '#2a3040'), {});
-    // Column rows (2D 0.08 + i*0.14, six columns) + drifting dust motes
-    for (let i = 0; i < 6; i++) {
-      [-1, 1].forEach(side => {
-        addC(c, P().column({ h: 8, color: '#2a3840' }),
-          side * (c.width / 2 - 2.6), -c.depth / 2 + 2.5 + i * (c.depth - 5) / 5, 0, 0.8, 0.8);
+    ground(c, 'stone', '#3c424c', 7);
+    room(c, hub ? 11 : 8, M().get('stone', '#262c36'), {});
+    // long carpet up the centre to the throne
+    add(c, P().rug({ w: 3, d: c.depth - 4, color: '#2e3850', border: '#1a2030' }), 0, 0, Math.PI / 2);
+    // throne on a raised dais at the back
+    const dais = new THREE.Mesh(P().BOX(), M().get('stone', '#1a1e26'));
+    dais.scale.set(hub ? 8 : 6, 0.4, 4); dais.position.set(0, 0.2, -c.depth / 2 + 3); dais.receiveShadow = true; c.group.add(dais);
+    addC(c, P().throne({ color: '#15181f' }), 0, -c.depth / 2 + 3, 0, 1.3, 1.1);
+    // a focused cold shaft falls on the empty throne — the seat of the Undying
+    const spot = new THREE.SpotLight(0x9ab4e8, hub ? 3.0 : 2.0, 20, 0.5, 0.45, 1.4);
+    spot.position.set(0, hub ? 10 : 7.5, -c.depth / 2 + 3);
+    spot.target.position.set(0, 0, -c.depth / 2 + 3);
+    c.group.add(spot, spot.target);
+    const cold = new THREE.PointLight(0x8aa0c8, 0.8, 14, 2); cold.position.set(0, 3, -c.depth / 2 + 4); c.group.add(cold);
+    addC(c, P().flag({ color: '#6a7280', trim: '#c8ccd4', seed: 6 }), -3.4, -c.depth / 2 + 4, 0.5, 0.25, 0.25);
+    addC(c, P().flag({ color: '#6a7280', trim: '#c8ccd4', seed: 7 }), 3.4, -c.depth / 2 + 4, -0.5, 0.25, 0.25);
+    // honor guards flank the dais; two braziers throw cold-warm pools by it
+    [-1, 1].forEach(s => {
+      const g4 = NS.Figures.buildById('guard', { chapterId: 'ch4' });
+      g4.position.set(s * 2.9, 0, -c.depth / 2 + 4.4); g4.rotation.y = 0; g4.userData.heading = 0;
+      if (g4.userData.setWalking) g4.userData.setWalking(false);
+      c.group.add(g4);
+      const br = add(c, P().torch({ light: true, intensity: 1.3 }), s * 4.4, -c.depth / 2 + 4); br.position.y = 1.0;
+    });
+
+    if (!hub) {
+      for (let i = 0; i < 4; i++) [-1, 1].forEach(s => addC(c, P().column({ h: 8, color: '#2a3840' }), s * (c.width / 2 - 2.2), -c.depth / 2 + 3 + i * 3.5, 0, 0.8, 0.8));
+      add(c, NS.FX.motes({ count: 14, w: c.width - 5, h: 5, d: c.depth - 5 }), 0, 0).position.y = 1;
+      return finish(c, {
+        boardAnchor: { x: 0, z: 1, rotY: 0 }, spawn: { x: 0, z: c.depth / 2 - 4, facing: Math.PI },
+        stage: { center: [0, 0, -1], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 6 },
+        tableStyle: 'stone', camera: { hubHeight: 3.4 },
       });
     }
-    add(c, NS.FX.motes({ count: 18, w: c.width - 6, h: 5, d: c.depth - 6 }), 0, 0).position.y = 1;
-    // The borrowed throne — centre back, alone, under Pale Court grey
-    addC(c, P().throne({ color: '#1a1e26' }), 0, -c.depth / 2 + 2.2, 0, 1.3, 1.1);
-    addC(c, P().flag({ color: '#6a7280', trim: '#c8ccd4', seed: 6 }), -3, -c.depth / 2 + 3.2, 0.5, 0.25, 0.25);
-    addC(c, P().flag({ color: '#6a7280', trim: '#c8ccd4', seed: 7 }), 3, -c.depth / 2 + 3.2, -0.5, 0.25, 0.25);
-    const cold = new THREE.PointLight(0x8aa0c8, 0.7, 12, 2);
-    cold.position.set(0, 3.4, -c.depth / 2 + 3);
-    c.group.add(cold);
-    if (hub) {
-      c.npcSlots = [
-        { x: 0, z: -7.5, facing: 0 },  // boss — at the throne
-        { x: 8, z: 8, facing: -Math.PI / 3 },
-      ];
+
+    // ── GRAND HALL ──────────────────────────────────────────────────────
+    // standing braziers flank the central approach from the entrance to the
+    // throne — pools of light to walk by, with dark wings between the columns
+    for (let i = 0; i < 6; i++) {
+      const bz = -c.depth / 2 + 6 + i * ((c.depth - 9) / 5);
+      [-1, 1].forEach(s => {
+        const post = new THREE.Mesh(P().geo('c4-brazier', () => new THREE.CylinderGeometry(0.18, 0.26, 1.4, 8)), M().get('metal', '#2a2c30'));
+        post.position.set(s * 2.4, 0.7, bz); post.castShadow = true; c.group.add(post);
+        const bowl = add(c, P().campfire({ light: true, intensity: 1.5, range: 9, scale: 0.45 }), s * 2.4, bz); bowl.position.y = 1.4;
+      });
     }
+    [-1, 1].forEach(side => {
+      for (let i = 0; i < 6; i++) {
+        const z = -c.depth / 2 + 4 + i * ((c.depth - 7) / 5);
+        addC(c, P().column({ h: 11, color: '#2a3840' }), side * (c.width / 2 - 3), z, 0, 0.8, 0.8);
+        addC(c, P().column({ h: 11, color: '#2a3840' }), side * (c.width / 2 - 9), z, 0, 0.8, 0.8);
+      }
+      add(c, P().rug({ w: 2, d: c.depth * 0.5, color: '#2e3645', border: '#222833' }), side * (c.width / 2 - 6), 0);
+      for (let i = 0; i < 2; i++) { const t = add(c, P().torch({ light: true, intensity: 1.1 }), side * (c.width / 2 - 6), -4 + i * 8); t.position.y = 1.0; } // braziers, walk-over
+      const wb = add(c, P().banner({ color: '#6a7280', h: 3, seed: 8 + side }), side * (c.width / 2 - 0.8), 0); wb.position.y = 6.5; wb.rotation.y = side * -Math.PI / 2;
+      for (let i = 0; i < 2; i++) { const w = add(c, P().stainedWindow({ seed: 11 + i + side, shaft: i === 0, shaftH: 8 }), side * (c.width / 2 - 0.4), -3 + i * 7); w.position.y = 5; w.rotation.y = side * Math.PI / 2; }
+    });
+    add(c, NS.FX.motes({ count: 26, w: c.width - 6, h: 6, d: c.depth - 6 }), 0, 0).position.y = 1.5;
+
+    // ── COUNCIL CHAMBER (west wing): round war table, chairs, candles ──
+    {
+      const table = addC(c, P().boardTable({ topSize: 3.2, topY: 0.9, color: '#2a2e36' }), -14, -6, 0, 1.7, 1.7);
+      const mapPlane = new THREE.Mesh(P().geo('c4-map', () => new THREE.PlaneGeometry(2.6, 2.6)), M().get('plaster', '#7a8088', { seed: 78 }));
+      mapPlane.rotation.x = -Math.PI / 2; mapPlane.position.set(-14, table.userData.topY + 0.012, -6); c.group.add(mapPlane);
+      [[-1.4, 0], [1.4, 0], [0, -1.4], [0, 1.4]].forEach(([dx, dz]) => addC(c, P().chair({ color: '#2e333c' }), -14 + dx, -6 + dz, Math.atan2(dx, dz) + Math.PI, 0.3, 0.3));
+      [[-1.2, -7.2], [1.2, -4.8]].forEach(([dx, dz]) => { const cd = add(c, P().candle({ light: true, intensity: 0.6, range: 5 }), -14 + dx, -6 + dz); cd.position.y = table.userData.topY; });
+    }
+
+    // ── GALLERY (east wing): weapon racks + war trophies on the wall ──
+    {
+      for (let i = 0; i < 3; i++) { // banners/trophies
+        const b = add(c, P().banner({ color: i % 2 ? '#4a5260' : '#5a4248', h: 2.2, w: 0.8, seed: 20 + i }), c.width / 2 - 0.6, -7 + i * 6); b.position.y = 4.4; b.rotation.y = -Math.PI / 2;
+      }
+      // weapon rack: a horizontal bar with mounted spears
+      const rack = new THREE.Mesh(P().BOX(), M().get('wood', '#2a2620')); rack.scale.set(0.12, 1.4, 3.2); rack.position.set(14.5, 0.7, 4); rack.castShadow = true; c.group.add(rack);
+      for (let i = 0; i < 5; i++) { const spear = new THREE.Mesh(P().CYL(), M().get('wood', '#3a2e20')); spear.scale.set(0.04, 2.2, 0.04); spear.position.set(14.6, 1.2, 2.6 + i * 0.7); c.group.add(spear); const tip = new THREE.Mesh(P().CONE(), M().get('metal', '#8a9098')); tip.scale.set(0.1, 0.25, 0.1); tip.position.set(14.6, 2.3, 2.6 + i * 0.7); c.group.add(tip); }
+      addC(c, P().crate({}), 13, 7.5); // walk-over
+    }
+
+    // ── ANTECHAMBER (the entrance, south): guards + braziers flanking the way ──
+    [[-3, 13], [3, 13]].forEach(([x, z]) => { const t = add(c, P().torch({ light: true, intensity: 1.2 }), x, z); t.position.y = 1.0; });
+    [[-4.5, 13.5, Math.PI / 2], [4.5, 13.5, -Math.PI / 2]].forEach(([x, z, r]) => {
+      const guard = NS.Figures.buildById('guard', { chapterId: 'ch4' });
+      guard.position.set(x, 0, z); guard.rotation.y = r; guard.userData.heading = r;
+      if (guard.userData.setWalking) guard.userData.setWalking(false);
+      c.group.add(guard);
+    });
+
+    c.npcSlots = [
+      { x: -6, z: 2, facing: Math.PI / 3 }, { x: 6, z: 1, facing: -Math.PI / 3 },
+      { x: -6, z: 8, facing: Math.PI / 3 }, { x: 6, z: 8, facing: -Math.PI / 3 },
+      { x: -10, z: -4, facing: Math.PI / 2 }, { x: 10, z: -3, facing: -Math.PI / 2 },
+      { x: 0, z: -c.depth / 2 + 5.5, facing: 0 }, // boss — before the throne
+      { x: 12, z: 11, facing: -Math.PI / 3 },     // merchant
+    ];
     return finish(c, {
       boardAnchor: { x: 0, z: 1, rotY: 0 },
-      spawn: { x: 0, z: hub ? c.depth / 2 - 7 : c.depth / 2 - 4, facing: Math.PI },
+      spawn: { x: 0, z: c.depth / 2 - 5, facing: Math.PI },
       stage: { center: [0, 0, -1], right: [1, 0, 0], forward: [0, 0, 1], width: 12, depth: 6 },
       tableStyle: 'stone',
-      camera: { hubHeight: 3.4 },
+      camera: { hubHeight: 3.6, hubDist: 6 },
     });
   };
 
@@ -649,57 +1169,122 @@
   // small fire, distant camp lights. Hub stage for chapter 5 (L19553).
   BUILDERS.clearing_ch5 = function (opts) {
     const hub = opts && opts.hub;
-    const c = ctx(hub ? 26 : 20, hub ? 24 : 18);
+    const c = ctx(hub ? 52 : 20, hub ? 46 : 18);
+    // A clearer, more moonlit night — the finale shouldn't be pitch black.
     atmosphere(c, {
-      sky: '#060810', fog: '#070a12', fogNear: 9, fogFar: hub ? 30 : 24,
-      hemi: ['#26365c', '#10141c', 0.8],
-      sun: { color: '#7a90c0', i: 0.28, pos: [-10, 20, -4], shadow: false }, // faint moon
+      sky: '#10161f', fog: '#121a26', fogNear: hub ? 18 : 9, fogFar: hub ? 58 : 24,
+      hemi: ['#3e5276', '#161e2c', hub ? 1.0 : 0.8],  // moodier night; the campfires pool the light
+      sun: { color: '#9fb4d8', i: hub ? 0.42 : 0.3, pos: [-14, 26, -8], shadow: hub, shadowSize: 30 },
     });
-    ground(c, 'ground', '#10140e', 7);
-    // The clearest star field in the game (2D: 40 stars over the clearing)
-    add(c, NS.FX.stars({ count: 110, radius: hub ? 24 : 19, moon: true }), 0, 0);
-    add(c, P().scatter({ w: c.width - 6, d: c.depth - 6, count: 18, clear: 3.5, grassColor: '#1c2818', grassColor2: '#141e10' }), 0, 0);
-    // Tree walls on both flanks (2D trunk strips 0.02–0.18 / 0.72–0.88)
-    for (let i = 0; i < (hub ? 7 : 5); i++) {
-      [-1, 1].forEach(side => {
+    ground(c, 'ground', '#1a2014', 10);
+    backdrop(c, { ground: '#141a10', hillColor: '#182214', style: 'forest', treeColor: '#10180f' });
+    add(c, NS.FX.stars({ count: hub ? 150 : 110, radius: hub ? 42 : 19, moon: true }), 0, 0);
+    add(c, NS.FX.fireflies({ count: hub ? 30 : 9, range: Math.min(c.width, c.depth) / 2 - 4 }), 0, 0);
+
+    if (!hub) {
+      // Intimate boss clearing (the battle board sits here)
+      for (let i = 0; i < 5; i++) [-1, 1].forEach(side => {
         const x = side * (c.width / 2 - 1.5 - (i % 3) * 1.6);
-        const z = -c.depth / 2 + 2 + i * (c.depth - 4) / (hub ? 6 : 4);
-        addC(c, P().tree({ h: 4.5 + (i % 2), color: '#101c12' }), x, z, 0, 0.4, 0.4);
+        addC(c, P().tree({ h: 4.5 + (i % 2), color: '#13241a' }), x, -c.depth / 2 + 2 + i * (c.depth - 4) / 4, 0, 0.4, 0.4);
+      });
+      add(c, P().campfire({ light: true, intensity: 2.6, range: 16, scale: 0.9 }), 0, 0.5);
+      collide(c, 0, 0.5, 0.6, 0.6);
+      return finish(c, {
+        boardAnchor: { x: 0, z: 2.6, rotY: 0 },
+        spawn: { x: 0, z: c.depth / 2 - 3, facing: Math.PI },
+        stage: { center: [0, 0, -0.4], right: [1, 0, 0], forward: [0, 0, 1], width: 9, depth: 4.5 },
+        tableStyle: 'stone', camera: { hubHeight: 3 },
       });
     }
-    for (let i = 0; i < 4; i++) {
-      addC(c, P().tree({ h: 4 + (i % 2), color: '#0e180f' }), -c.width / 2 + 3 + i * (c.width - 6) / 3, -c.depth / 2 + 1.2, 0, 0.4, 0.4);
+
+    // ── BIG FOREST HUB ──────────────────────────────────────────────────
+    const W = c.width, D = c.depth;
+    // dirt paths (lighter ground strips) linking the camps
+    const pathMat = M().get('ground', '#33291a', { seed: 73 });
+    const path = (x, z, w, d, rot) => {
+      const p = new THREE.Mesh(P().geo(`ch5path|${w}|${d}`, () => new THREE.PlaneGeometry(w, d)), pathMat);
+      p.rotation.x = -Math.PI / 2; if (rot) p.rotation.z = rot;
+      p.position.set(x, 0.015, z); p.receiveShadow = true; c.group.add(p);
+    };
+    path(0, 7, 3.2, 30);                 // main south→centre
+    path(-9, -7, 3, 16, Math.PI / 2.6);  // branch to NW camp
+    path(10, -5, 3, 16, -Math.PI / 2.6); // branch to NE camp
+    path(0, -16, 3, 12);                 // centre→far camp
+
+    // forest: trees ring the edge densely + scatter inside, leaving the
+    // clearings and paths clear. Small collider so they're easy to slip past.
+    const onPath = (x, z) =>
+      (Math.abs(x) < 2.4 && z > -2) ||                       // main path
+      (Math.hypot(x, z) < 6.5) ||                            // central clearing
+      (Math.hypot(x + 13, z + 8) < 5) ||                     // NW camp
+      (Math.hypot(x - 13, z + 6) < 5) ||                     // NE camp
+      (Math.hypot(x, z + 17) < 5) ||                         // far camp
+      (Math.hypot(x + 17, z - 12) < 5);                      // pond
+    for (let i = 0; i < 64; i++) {
+      const a = (i / 64) * Math.PI * 2, r = (W / 2 - 2.5) * (0.78 + (i % 4) * 0.06);
+      const x = Math.cos(a) * r, z = Math.sin(a) * r * 0.88;
+      if (z > D / 2 - 6 && Math.abs(x) < 4) continue;         // keep the entrance open
+      addC(c, P().tree({ h: 4.5 + (i % 3) * 1.3, color: i % 2 ? '#12221a' : '#15281c' }), x, z, 0, 0.34, 0.34);
     }
-    // The small personal campfire
-    add(c, P().campfire({ light: true, intensity: 2.2, range: 15, scale: 0.8 }), 0, 0.5);
-    collide(c, 0, 0.5, 0.7, 0.7);
-    // Two log seats — "just the two of you"
-    [[-1.4, 1.6, 0.6], [1.4, 1.6, -0.6]].forEach(([x, z, r]) => {
+    for (let i = 0; i < 34; i++) {
+      const x = (((i * 73) % 100) / 100 - 0.5) * (W - 8);
+      const z = (((i * 149) % 100) / 100 - 0.5) * (D - 8);
+      if (onPath(x, z)) continue;
+      addC(c, P().tree({ h: 3.6 + (i % 3), color: '#13241a' }), x, z, 0, 0.32, 0.32);
+    }
+
+    // central clearing — Saoirse's fire (the story spot), well lit
+    add(c, P().campfire({ light: true, intensity: 3.2, range: 18, scale: 1.05 }), 0, 0);
+    collide(c, 0, 0, 0.6, 0.6);
+    const moonGlow = new THREE.PointLight(0xbcd0ff, 0.5, 24, 2);
+    moonGlow.position.set(0, 9, -2); c.group.add(moonGlow);
+    // log seats around the fire (walk-over — no colliders)
+    [[-1.7, 1.7, 0.6], [1.7, 1.7, -0.6], [0, -1.9, 0]].forEach(([x, z, r]) => {
       const log = new THREE.Mesh(P().CYL(), M().get('wood', '#2a1e14'));
-      log.scale.set(0.2, 1.2, 0.2); log.rotation.z = Math.PI / 2; log.rotation.y = r;
-      log.position.set(x, 0.2, z); log.castShadow = true;
-      c.group.add(log);
-      collide(c, x, z, 0.6, 0.3);
+      log.scale.set(0.2, 1.4, 0.2); log.rotation.z = Math.PI / 2; log.rotation.y = r;
+      log.position.set(x, 0.2, z); log.castShadow = true; c.group.add(log);
     });
-    // Distant camp lights through the trees (2D right edge dots)
-    for (let i = 0; i < 4; i++) {
-      const glow = new THREE.Mesh(P().SPHERE(), M().glow('#e08020', 0.8));
-      glow.scale.setScalar(0.1);
-      glow.position.set(c.width / 2 - 0.5, 1 + i * 0.1, -3 + i * 1.8);
-      c.group.add(glow);
-    }
-    if (hub) {
-      c.npcSlots = [
-        { x: 0, z: -2.2, facing: 0 },  // Saoirse, across the fire
-        { x: 7, z: 7, facing: -Math.PI / 3 },
-      ];
-    }
+
+    // camps: campfire (light) + two tents (collide) + walk-over crates/barrels
+    const camp = (cx, cz) => {
+      add(c, P().campfire({ light: true, intensity: 2.2, range: 12 }), cx, cz);
+      collide(c, cx, cz, 0.55, 0.55);
+      addC(c, P().tent({}), cx - 2.6, cz - 1.2, 0.3, 1.1, 1.3);
+      addC(c, P().tent({}), cx + 2.5, cz + 0.8, -0.4, 1.1, 1.3);
+      add(c, P().crate({}), cx + 1.4, cz - 1.9);     // walk-over
+      add(c, P().barrel({}), cx - 1.7, cz + 1.7);    // walk-over
+    };
+    camp(-13, -8);
+    camp(13, -6);
+    camp(0, -17);
+
+    // lantern posts down the main path — light to walk by (thin, no collider)
+    [[-2.6, 13], [2.6, 5], [-2.6, -3], [2.6, -11]].forEach(([x, z]) => add(c, P().lanternPost({ light: true }), x, z));
+
+    // moonlit pond off to the side
+    const pondX = -17, pondZ = 12;
+    add(c, NS.FX.water({ w: 6.5, l: 7.5, color: '#1e3850', still: true }), pondX, pondZ);
+    const rim = new THREE.Mesh(P().geo('pond-rim2', () => new THREE.RingGeometry(3.2, 4.2, 26)), M().get('ground', '#1c1e16', { seed: 71 }));
+    rim.rotation.x = -Math.PI / 2; rim.position.set(pondX, 0.02, pondZ); rim.receiveShadow = true; c.group.add(rim);
+    collide(c, pondX, pondZ, 3.2, 3.6);
+    add(c, NS.FX.critters({ style: 'rabbit', count: 2, range: 5 }), pondX + 4, pondZ - 2);
+    add(c, NS.FX.critters({ style: 'crow', count: 2, range: 7 }), 9, -11);
+
+    c.npcSlots = [
+      { x: 0, z: -2.6, facing: 0 },      // Saoirse, across the fire
+      { x: -11, z: -7, facing: -0.6 },   // NW camp
+      { x: 11, z: -5, facing: 0.6 },     // NE camp
+      { x: 3, z: 6, facing: Math.PI },
+      { x: -4, z: 7, facing: Math.PI },
+      { x: 0, z: -15, facing: 0 },       // boss — far camp
+      { x: 14, z: -7, facing: -Math.PI / 2 }, // merchant
+    ];
     return finish(c, {
-      boardAnchor: { x: 0, z: 2.6, rotY: 0 },
-      spawn: { x: 0, z: hub ? c.depth / 2 - 6 : c.depth / 2 - 3, facing: Math.PI },
-      stage: { center: [0, 0, -0.4], right: [1, 0, 0], forward: [0, 0, 1], width: 9, depth: 4.5 },
+      boardAnchor: { x: 0, z: 3, rotY: 0 },
+      spawn: { x: 0, z: D / 2 - 4, facing: Math.PI },
+      stage: { center: [0, 0, -0.4], right: [1, 0, 0], forward: [0, 0, 1], width: 10, depth: 5 },
       tableStyle: 'stone',
-      camera: { hubHeight: 3 },
+      camera: { hubHeight: 3.3, hubDist: 6 },
     });
   };
 
@@ -757,6 +1342,7 @@
       sun: { color: '#ffae50', i: 0.65, pos: [-12, 6, 5] },
     });
     ground(c, 'ground', '#867060', 6);
+    backdrop(c, { ground: '#6e5e4c', hillColor: '#544a38', style: 'town' });
     // The tavern (2D 0.2–0.75) with a glowing doorway and smoking chimney
     const tav = P().building({ w: 9, d: 6, h: 3.6, wallColor: '#484038', roofColor: '#2a2018', windows: 3, glowWindows: true, doorSide: 's', chimney: true });
     addC(c, tav, -1, -4, 0, 4.6, 3.2);
@@ -802,6 +1388,7 @@
       sun: { color: '#c8c4b8', i: 0.5, pos: [8, 14, 6] },
     });
     ground(c, 'ground', '#2e2416', 6);
+    backdrop(c, { ground: '#2a2114', hillColor: '#262a1c', style: 'forest', treeColor: '#1c2416' });
     // Farmhouse (2D 0.25–0.75) — roof half-collapsed
     const fh = new THREE.Group();
     const wallM = M().get('plaster', '#3a3228', { seed: 83 });
@@ -839,7 +1426,7 @@
 
   // ── Hub mapping per chapter ──────────────────────────────────────────
   const CHAPTER_HUBS = {
-    ch1: 'palace_great_hall',
+    ch1: 'palace_complex',
     ch2: 'army_camp_night',
     ch3: 'valdris_border_town',
     ch4: 'valdris_throne_room',

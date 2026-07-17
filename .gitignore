@@ -9,9 +9,10 @@ mered/engine/stockfish
 mered/engine/*.exe
 mered/engine/*.bin
 
-# Logs and temp
+# Logs, temp, and local archives
 *.log
 *.pid
+*.zip
 
 # OS files
 .DS_Store

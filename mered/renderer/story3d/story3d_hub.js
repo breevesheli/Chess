@@ -26,6 +26,8 @@
     untick: null,
     signpost: null,
     nearSignpost: false,
+    extras: [],
+    walkers: [],
   };
 
   function _chapters() { return (typeof STORY_CHAPTERS !== 'undefined') ? STORY_CHAPTERS : window.STORY_CHAPTERS; }
@@ -45,8 +47,7 @@
     const env = NS.Environments.buildHub(chapter.id);
     state.env = env;
     NS.scene.add(env.group);
-    NS.scene.fog = env.fog || null;
-    NS.scene.background = env.sky || null;
+    NS.applyAtmosphere(env);
 
     // Player character — normalized to 1.0 world scale (the CS table's 1.2
     // is a 2D silhouette size, too imposing for the follow camera).
@@ -58,9 +59,11 @@
     NS.scene.add(player);
     state.player = player;
 
-    // Travel signpost near the spawn
+    // Travel signpost — env can pin it against a wall (out of the walkway)
     const sign = _buildSignpost();
-    sign.position.set(env.spawn.x + 2.2, 0, env.spawn.z + 0.4);
+    const sp = env.signpostPos || { x: env.spawn.x + 2.2, z: env.spawn.z + 0.4 };
+    sign.position.set(sp.x, 0, sp.z);
+    if (sp.rotY !== undefined) sign.rotation.y = sp.rotY;
     NS.scene.add(sign);
     state.signpost = sign;
     env.colliders.push({ x: sign.position.x, z: sign.position.z, hw: 0.3, hd: 0.3 });
@@ -71,10 +74,15 @@
     // Companions + side activities (tavern riddler, drill post, lore pages)
     _spawnExtras(env, chapter);
 
-    // Animator pump: env props + player + NPC figures
+    // Ambient life: patrolling guards + wandering citizens per location
+    _spawnWalkers(env, chapter);
+
+    // Animator pump: env props + player + NPC figures + walkers + extras
     state.animators = env.animators.slice();
     player.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); });
     NS.NPCs._state.group?.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); });
+    state.walkers.forEach(w => w.fig.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); }));
+    (state.extras || []).forEach(e => e.obj?.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); }));
     state.untick = NS.onTick(_tick);
 
     NS.Character.attach(player, env);
@@ -96,7 +104,86 @@
     NS.HUD.hidePrompt();
     state.animators = [];
     state.extras = [];
+    state.walkers = [];
     state.visible = false;
+  }
+
+  // ── Ambient walkers (guards on patrol, citizens going somewhere) ─────
+  function _openSpot(env, tries) {
+    for (let i = 0; i < (tries || 8); i++) {
+      const x = env.bounds.minX + 1 + Math.random() * (env.bounds.maxX - env.bounds.minX - 2);
+      const z = env.bounds.minZ + 1 + Math.random() * (env.bounds.maxZ - env.bounds.minZ - 2);
+      const blocked = env.colliders.some(b =>
+        Math.abs(x - b.x) < b.hw + 0.6 && Math.abs(z - b.z) < b.hd + 0.6);
+      if (!blocked) return { x, z };
+    }
+    return { x: env.spawn.x, z: env.spawn.z - 3 };
+  }
+
+  function _spawnWalkers(env, chapter) {
+    state.walkers = [];
+    const C = NS.Content;
+    const plan = C.WALKERS[chapter.id] || { guards: 0, citizens: 0 };
+    const palette = C.CITIZEN_COLORS[chapter.id] || [];
+    const mk = (fig, speed) => {
+      const spot = _openSpot(env);
+      fig.position.set(spot.x, 0, spot.z);
+      env.group.add(fig);
+      state.walkers.push({ fig, target: _openSpot(env), idleUntil: 0, speed });
+    };
+    for (let i = 0; i < plan.guards; i++) {
+      mk(NS.Figures.buildById('guard', { chapterId: chapter.id }), 1.3); // measured patrol pace
+    }
+    for (let i = 0; i < plan.citizens; i++) {
+      const color = palette[i % Math.max(palette.length, 1)] || '#4a4238';
+      const fig = NS.Figures.build({ kind: 'human', color, scale: 0.94 + Math.random() * 0.1 });
+      mk(fig, 1.0);
+    }
+  }
+
+  function _walkerTick(dt, t) {
+    const env = state.env;
+    if (!env) return;
+    state.walkers.forEach(w => {
+      if (t < w.idleUntil) { w.fig.userData.setWalking?.(false); return; }
+      const dx = w.target.x - w.fig.position.x;
+      const dz = w.target.z - w.fig.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.35) {
+        // arrived: pause, look around, pick a new destination
+        w.idleUntil = t + 2 + Math.random() * 5;
+        w.target = _openSpot(env);
+        w.fig.userData.setWalking?.(false);
+        return;
+      }
+      let nx = w.fig.position.x + (dx / dist) * w.speed * dt;
+      let nz = w.fig.position.z + (dz / dist) * w.speed * dt;
+      // same AABB push-out the player uses, so they respect walls/props
+      for (const b of env.colliders) {
+        const ox = b.hw + 0.35 - Math.abs(nx - b.x);
+        const oz = b.hd + 0.35 - Math.abs(nz - b.z);
+        if (ox > 0 && oz > 0) {
+          if (ox < oz) nx += (nx - b.x >= 0 ? ox : -ox);
+          else nz += (nz - b.z >= 0 ? oz : -oz);
+        }
+      }
+      // if a wall pinned us, give up on this destination early
+      if (Math.hypot(nx - w.fig.position.x, nz - w.fig.position.z) < w.speed * dt * 0.25) {
+        w.target = _openSpot(env);
+        return;
+      }
+      w.fig.position.x = nx;
+      w.fig.position.z = nz;
+      const h = Math.atan2(dx, dz);
+      let cur = w.fig.userData.heading ?? w.fig.rotation.y;
+      let diff = h - cur;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      cur += diff * Math.min(1, dt * 6);
+      w.fig.userData.heading = cur;
+      w.fig.rotation.y = cur;
+      w.fig.userData.setWalking?.(true);
+    });
   }
 
   // ── Companions + side activities ─────────────────────────────────────
@@ -279,6 +366,8 @@
     state.animators = state.env.animators.slice();
     player.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); });
     NS.NPCs._state.group?.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); });
+    (state.walkers || []).forEach(w => w.fig.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); }));
+    (state.extras || []).forEach(e => e.obj?.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); }));
     if (state.signpost) state.animators.push(...(state.signpost.userData.animators || []));
   }
 
@@ -315,6 +404,7 @@
 
   function _tick(dt, t) {
     state.animators.forEach(fn => fn(t, dt));
+    _walkerTick(dt, t);
     if (!state.player || !state.visible) return;
     if (NS.Character.overlayOpen() || NS.Inventory?.isOpen()) { NS.HUD.hidePrompt(); return; }
     const px = state.player.position.x, pz = state.player.position.z;
@@ -348,18 +438,28 @@
     NS.bus.on('interact', () => {
       if (!state.visible || NS.Character.overlayOpen()) return;
       if (state.nearSignpost) { NS.WorldMap?.show(state.chapterId); return; }
-      if (state.nearExtra) { try { state.nearExtra.action(); } catch (e) { console.warn('[Story3D activity]', e); } return; }
+      const pp = state.player ? state.player.position : null;
+      if (state.nearExtra) {
+        if (pp) state.nearExtra.obj?.userData.lookAt?.(pp);
+        try { state.nearExtra.action(); } catch (e) { console.warn('[Story3D activity]', e); }
+        return;
+      }
+      const n = NS.NPCs._state ? NS.NPCs._state.nearest : null;
+      if (pp && n && !n.locked) n.figure.userData.lookAt?.(pp);
       NS.NPCs.interact();
     });
   })();
 
-  /** Travel to another (unlocked) chapter — mirrors the 2D card onclick. */
+  /** Travel to another (unlocked) chapter — mirrors the 2D card onclick.
+   *  Routed through the wrapped openStoryMode funnel so first-time arrival
+   *  scenes and quest-reward sweeps run on every chapter entry. */
   function travelTo(chapterId) {
     const prog = _progress();
     prog.currentChapter = chapterId;
     if (typeof debouncedSave === 'function') debouncedSave();
     else window.debouncedSave?.();
-    show(chapterId);
+    if (typeof window !== 'undefined' && window.openStoryMode) window.openStoryMode();
+    else show(chapterId);
   }
 
   return { show, hide, refresh, refreshPlayer, travelTo, _state: state };

@@ -33,7 +33,7 @@
     '#world-map-overlay.open', '#collection-screen.open', '#stats-screen.open',
     '#customize-screen.open', '#training-screen.open', '#chest-shop-screen.open',
     '#leaderboard-hub.open', '#lore-reader-overlay.open', '#prologue-overlay.open',
-    '#s3d-travel.open', '#s3d-inv.open', '#s3d-shop.open',
+    '#s3d-travel.open', '#s3d-inv.open', '#s3d-shop.open', '#s3d-settings.open',
   ];
   function overlayOpen() {
     return !!document.querySelector(OVERLAY_SELECTORS.join(', '));
@@ -133,7 +133,8 @@
     let diff = targetH - cur;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    cur += diff * Math.min(1, dt * 10);
+    const sens = Math.max(0.2, (NS.settings && NS.settings.sensitivity) || 1);
+    cur += diff * Math.min(1, dt * 6 * sens); // turn speed — settings gear
     fig.userData.heading = cur;
     fig.rotation.y = cur;
     fig.userData.setWalking?.(true);

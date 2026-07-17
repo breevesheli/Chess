@@ -159,10 +159,13 @@
 
   function fabric(baseHex, seed, size) {
     size = size || 128; seed = seed || 41;
-    return _generate(`fabric|${baseHex}|${seed}|${size}`, size, baseHex, 0.3, 0.9, 0.08, (nx, ny) => {
-      const weave = (Math.sin(nx * Math.PI * 48) * Math.sin(ny * Math.PI * 48)) * 0.5 + 0.5;
-      const wear = fbm(seed, nx * 4, ny * 4, 3, 4);
-      return { v: 0.55 + 0.3 * weave + 0.15 * wear };
+    // Soft cloth: broad mottle + a faint weft line. (The old sin(x)·sin(y)
+    // "weave" read as a hard checkerboard on characters at close range.)
+    return _generate(`fabric|${baseHex}|${seed}|${size}`, size, baseHex, 0.16, 0.9, 0.08, (nx, ny) => {
+      const wear = fbm(seed, nx * 3, ny * 3, 4, 3);
+      const fold = fbm(seed + 13, nx * 1.5, ny * 1.5, 2, 2);
+      const thread = Math.sin(ny * Math.PI * 96) * 0.03;
+      return { v: 0.62 + 0.22 * wear + 0.13 * fold + thread };
     });
   }
 

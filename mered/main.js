@@ -65,6 +65,10 @@ function createWindow() {
       contextIsolation: true,
       // Allow loading local files (chess_visuals.js, stockfish.wasm, etc.)
       webSecurity: !isDev,
+      // Harness runs drive timer-paced flows (cutscene typewriter) while the
+      // window may sit occluded behind other windows; Chromium then throttles
+      // setTimeout to ~1Hz and the flows stall. Players never need this.
+      backgroundThrottling: !(smokeTest || smoke3dTest),
     },
     show: false,  // show after ready-to-show to avoid flash
   });
@@ -662,16 +666,24 @@ async function runSmoke3dTest() {
         storyProgress.clearedFights = [];
         storyProgress.bossesCleared = [];
         storyProgress.outcome = null;
+        storyProgress.arrivals3d = [];
         delete storyProgress.gear3d;
         return true;
       })()
     `);
 
-    // 4. Enter 3D mode through the real menu path
+    // 4. Enter 3D mode through the real menu path. The difficulty screen is
+    // a 2D overlay at z 180 — the 3D canvas (z 240) must be OFF here or the
+    // player sees a black screen (regression guard).
     await js(`enterMode('story3d')`);
     await pause(400);
-    const dsOpen = await js(`document.getElementById('difficulty-select')?.classList.contains('open')`);
-    log('difficulty select', dsOpen === true, dsOpen ? 'opened via the original story path' : 'did not open');
+    const dsOpen = await js(`
+      document.getElementById('difficulty-select')?.classList.contains('open') === true &&
+      document.getElementById('story3d-canvas')?.style.zIndex === '170' &&
+      document.body.classList.contains('story3d-menu')
+    `);
+    log('difficulty select', dsOpen === true, dsOpen ? 'opened and VISIBLE over the live hall (canvas under at z 170)' : 'did not open or sits behind the canvas');
+    await shot('difficulty');
     await js(`
       (() => {
         const card = document.querySelector('.ds-card[data-id="story"]');
@@ -681,12 +693,162 @@ async function runSmoke3dTest() {
         return true;
       })()
     `);
-    const hubUp = await waitFor(`Story3D.Hub._state.visible === true`, 8000, 250);
-    log('hub ch1', hubUp, hubUp ? 'walkable hub visible after difficulty confirm' : 'hub never appeared');
+    // The first entry plays the ch1 arrival cutscene — click through it.
+    const hubUp = await advanceUntil(`Story3D.Hub._state.visible === true`, 60000);
+    log('hub ch1', hubUp, hubUp ? 'arrival scene played, walkable hub visible' : 'hub never appeared');
+    if (!hubUp) {
+      // Post-mortem for the intermittent stall: where exactly did the flow die?
+      const diag = await js(`JSON.stringify({
+        ds: document.getElementById('difficulty-select')?.classList.contains('open'),
+        dsSel: typeof _dsSelected !== 'undefined' ? _dsSelected : 'n/a',
+        csOpen: document.getElementById('cs-dialogue')?.classList.contains('open'),
+        nextVis: document.getElementById('cs-next')?.style.display,
+        txtTail: (document.getElementById('cs-text')?.textContent || '').slice(-60),
+        cs: { running: Story3D.Cutscene._state.running, idx: Story3D.Cutscene._state.idx,
+              steps: (Story3D.Cutscene._state.steps || []).length },
+        arrivals: storyProgress.arrivals3d, chapter: storyProgress.currentChapter,
+        active: Story3D.active, menuMode: document.body.classList.contains('story3d-menu'),
+      })`);
+      console.log('[SMOKE3D][diag] hub ch1 stuck:', diag);
+    }
     await pause(900);
     const tri = await js(`Story3D.renderer.info.render.triangles`);
     log('hub renders', tri > 1000, `${tri} triangles in frame`);
     await shot('hub_ch1');
+    if (shotDir) {
+      // Elevated overview of the whole castle + exterior courtyard/farms
+      await js(`Story3D.CameraRig.jumpTo({ x: -10, y: 36, z: 26 }, { x: -12, y: 0, z: 0 }); true`);
+      await pause(450);
+      await shot('hub_ch1_over');
+      await js(`Story3D.Hub.show('ch1'); true`);
+      await pause(300);
+    }
+    if (shotDir) {
+      // Close-up of a companion's face — for reviewing faces/hair detail
+      await js(`(() => {
+        const xs = (Story3D.Hub._state.extras || []);
+        const e = xs.find(x => x.obj && ['human', 'queen'].includes(x.obj.userData.figureKind))
+          || xs.find(x => x.obj && x.obj.userData.figureId);
+        if (!e) return false;
+        const p = e.obj.position, a = e.obj.rotation.y;
+        const cam = { x: p.x + Math.sin(a) * 1.3, y: 1.82, z: p.z + Math.cos(a) * 1.3 };
+        Story3D.CameraRig.flyTo(cam, { x: p.x, y: 1.66, z: p.z }, 200);
+        e.obj.userData.lookAt?.(cam);   // they turn to the lens — tests look-at too
+        return true;
+      })()`);
+      await pause(900);
+      await shot('face_closeup');
+      // A guard at ease — verifies the planted-sword stance
+      await js(`(() => {
+        const w = (Story3D.Hub._state.walkers || []).find(w => w.fig.userData.figureId === 'guard');
+        if (!w) return false;
+        w.idleUntil = 1e9;                      // hold him at his post
+        w.fig.userData.setWalking(false);
+        w.fig.position.set(-8, 0, 0);           // a clear stretch of corridor
+        w.fig.rotation.y = Math.PI / 2;
+        w.fig.userData.heading = Math.PI / 2;
+        const p = w.fig.position, a = w.fig.rotation.y;
+        Story3D.CameraRig.flyTo(
+          { x: p.x + Math.sin(a) * 2.2, y: 1.6, z: p.z + Math.cos(a) * 2.2 },
+          { x: p.x, y: 0.95, z: p.z }, 200);
+        return true;
+      })()`);
+      await pause(700);
+      await shot('guard_closeup');
+      // A hooded bishop — verifies the hood wraps the block head
+      await js(`(() => {
+        const e = (Story3D.Hub._state.extras || []).find(x => x.obj && x.obj.userData.figureKind === 'bishop');
+        if (!e) return false;
+        const p = e.obj.position, a = e.obj.rotation.y;
+        const cam = { x: p.x + Math.sin(a) * 1.3, y: 1.82, z: p.z + Math.cos(a) * 1.3 };
+        Story3D.CameraRig.flyTo(cam, { x: p.x, y: 1.66, z: p.z }, 200);
+        e.obj.userData.lookAt?.(cam);
+        return true;
+      })()`);
+      await pause(900);
+      await shot('hood_closeup');
+      // A knight — verifies the great-helm + crest
+      const knightInfo = await js(`(() => {
+        const xs = (Story3D.Hub._state.extras || []);
+        return JSON.stringify(xs.map(x => x.obj && (x.obj.userData.figureId + ':' + x.obj.userData.figureKind)));
+      })()`);
+      console.log('[SMOKE3D][diag] ch1 extras:', knightInfo);
+      await js(`(() => {
+        const xs = (Story3D.Hub._state.extras || []);
+        const e = xs.find(x => x.obj && x.obj.userData.figureKind === 'knight');
+        if (!e) return false;
+        const p = e.obj.position, a = e.obj.rotation.y + 0.6; // 3/4 angle
+        const cam = { x: p.x + Math.sin(a) * 1.7, y: 1.95, z: p.z + Math.cos(a) * 1.7 };
+        Story3D.CameraRig.flyTo(cam, { x: p.x, y: 1.68, z: p.z }, 200);
+        e.obj.userData.lookAt?.(cam);
+        return true;
+      })()`);
+      await pause(800);
+      await shot('knight_closeup');
+      // Clean isolated portraits high above the map (only sky behind) so the
+      // piece styling is unambiguous: knight helm, mounted knight, rook, mitre.
+      const solo = async (name, id, opts, head, rotY) => {
+        const n = await js(`(() => {
+          if (window.__solo) { Story3D.scene.remove(window.__solo); }
+          const f = Story3D.Figures.buildById(${JSON.stringify(id)}, Object.assign({ chapterId: 'ch1' }, ${JSON.stringify(opts || {})}));
+          f.position.set(-8, 0, 0); f.rotation.y = ${rotY || 0}; // face the camera (+z); rotY spins for angle shots
+          window.__solo = f; Story3D.scene.add(f);
+          window.__soloAnim = []; f.traverse(o => { if (o.userData.animators) window.__soloAnim.push(...o.userData.animators); });
+          window.__soloTick = window.__soloTick || Story3D.onTick((dt, t) => (window.__soloAnim || []).forEach(fn => fn(t, dt)));
+          const mounted = ${opts && opts.mounted ? 'true' : 'false'};
+          if (${head ? 'true' : 'false'}) {
+            Story3D.CameraRig.jumpTo({ x: -7.6, y: 1.92, z: 1.4 }, { x: -8, y: 1.86, z: 0 }); // tight head + shoulders, 3/4
+          } else {
+            Story3D.CameraRig.jumpTo({ x: -8, y: mounted ? 1.9 : 1.75, z: 3.2 }, { x: -8, y: mounted ? 1.2 : 1.5, z: 0 });
+          }
+          let kids = 0; f.traverse(() => kids++);
+          return kids;
+        })()`);
+        console.log('[SMOKE3D][diag] solo ' + name + ' meshes=' + n);
+        await pause(500);
+        await js(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`); // settle the framebuffer
+        await shot(name);
+      };
+      // Hide every other figure so the portrait subject stands alone
+      await js(`(() => {
+        const S = Story3D.Hub._state;
+        window.__hidden = [];
+        const hide = o => { if (o) { window.__hidden.push([o, o.visible]); o.visible = false; } };
+        if (S.player) hide(S.player);
+        if (S.group) hide(S.group);
+        Story3D.NPCs._state && Story3D.NPCs._state.group && hide(Story3D.NPCs._state.group);
+        (S.extras || []).forEach(e => hide(e.obj));
+        (S.walkers || []).forEach(w => hide(w.fig));
+        return true;
+      })()`);
+      await solo('solo_knight', 'idris', null, true);                        // aurveld → full plume
+      await solo('solo_knight_visor', 'idris', { faction: 'valdris' }, true); // valdris → raised visor
+      await solo('solo_knight_mix', 'idris', { faction: 'ashfield' }, true);  // ashfield → both
+      await solo('solo_knight_mounted', 'idris', { mounted: true });
+      await solo('solo_rook', 'brennar');
+      await solo('solo_bishop', 'maren', null, true);            // hood, front (tight)
+      await solo('solo_bishop_34', 'maren', null, true, 0.7);    // hood, 3/4
+      await solo('solo_bishop_side', 'maren', null, true, 1.5708); // hood, side profile
+      await solo('solo_councilor', 'councilor', null, true);     // the green councilor (what the user flagged)
+      await solo('solo_councilor_34', 'councilor', null, true, 0.7);
+      await solo('solo_hair_long', 'seraphine', null, true);  // long hair
+      await solo('solo_hair_npc', 'messenger', null, true);   // hashed crowd hair, front
+      await solo('solo_hair_npc_34', 'messenger', null, true, 0.7);  // 3/4
+      await solo('solo_hair_npc_side', 'messenger', null, true, 1.5708); // side profile
+      await solo('solo_hair_player', 'player', null, true);   // player's 'decent' short hair, for comparison
+      // A water patch — verifies the new rippling, reflective surface
+      await js(`(() => {
+        if (window.__solo) Story3D.scene.remove(window.__solo);
+        const w = Story3D.FX.water({ w: 7, l: 7, color: '#34607e' });
+        w.position.set(-8, 0.12, -1.5); window.__solo = w; Story3D.scene.add(w);
+        window.__soloAnim = []; w.traverse(o => { if (o.userData.animators) window.__soloAnim.push(...o.userData.animators); });
+        Story3D.CameraRig.jumpTo({ x: -8, y: 2.3, z: 4.6 }, { x: -8, y: 0.2, z: -1.5 });
+        return true;
+      })()`);
+      await pause(800);
+      await shot('water');
+      await js(`if (window.__solo) { Story3D.scene.remove(window.__solo); window.__solo = null; } (window.__hidden||[]).forEach(([o,v]) => o.visible = v); true`);
+    }
 
     // 5. Every chapter hub builds and renders
     for (const ch of ['ch2', 'ch3', 'ch4', 'ch5']) {
@@ -695,6 +857,13 @@ async function runSmoke3dTest() {
       const ok = await js(`Story3D.Hub._state.visible && Story3D.scene.children.length > 2 && Story3D.renderer.info.render.triangles > 500`);
       log(`hub ${ch}`, ok === true, ok ? 'built + rendering' : 'failed to build/render');
       await shot(`hub_${ch}`);
+      if (shotDir) {  // an elevated overview so big hubs (forests/towns) are visible
+        await js(`Story3D.CameraRig.jumpTo({ x: 0, y: 22, z: 22 }, { x: 0, y: 0, z: -4 }); true`);
+        await pause(400);
+        await shot(`hub_${ch}_over`);
+        await js(`Story3D.Hub.show('${ch}'); true`); // restore the follow camera
+        await pause(300);
+      }
     }
     await js(`Story3D.Hub.show('ch1')`);
     await pause(500);
@@ -745,11 +914,12 @@ async function runSmoke3dTest() {
       JSON.stringify({
         extras: Story3D.Hub._state.extras.length,
         companions: Story3D.Hub._state.extras.filter(e => e.prompt.includes('TALK')).length,
+        walkers: Story3D.Hub._state.walkers.length,
       })
     `);
     const ex = JSON.parse(extras);
-    log('hub life', ex.companions >= 4 && ex.extras >= ex.companions + 3,
-      `${ex.companions} companions, ${ex.extras - ex.companions} activities (riddler/drill/pages)`);
+    log('hub life', ex.companions >= 4 && ex.extras >= ex.companions + 3 && ex.walkers >= 2,
+      `${ex.companions} companions, ${ex.extras - ex.companions} activities, ${ex.walkers} ambient walkers`);
 
     // 5g. 3D world map: opens, five landmarks, pans/zooms, travels back
     await js(`Story3D.WorldMap.show('ch1')`);
@@ -783,11 +953,13 @@ async function runSmoke3dTest() {
     const mirror0 = await js(`Story3D.Adapter.boardDiff(Story3D.Match._state.model, boardPosition).length`);
     log('mirror parity', mirror0 === 0, `${mirror0} squares differ at start`);
     await js(`executeMove(6, 4, 4, 4)`); // e2e4 through the real rules layer
-    await pause(3200); // bot answers via Stockfish
+    // Wait for the bot's answer (first engine spawn can take a while —
+    // antivirus scans the binary on its first launch from a fresh path)
+    const botMoved = await waitFor(`!!(lastMove && sideToMove === 'white')`, 15000, 300);
+    await pause(600); // let the capture/glide animation settle
     const e4 = await js(`Story3D.Match.getPieceAt('e4')`);
     log('player move mirrored', e4 === 'P', `e4 holds "${e4}"`);
-    const botMoved = await js(`!!(lastMove && sideToMove === 'white')`);
-    log('bot replied', botMoved === true, botMoved ? 'black answered through Stockfish path' : 'no bot reply');
+    log('bot replied', botMoved === true, botMoved ? 'black answered through Stockfish path' : 'no bot reply within 15s');
     const mirror1 = await js(`Story3D.Adapter.boardDiff(Story3D.Match._state.model, boardPosition).length`);
     log('mirror after moves', mirror1 === 0, `${mirror1} squares differ after exchanges`);
     await shot('match_after_moves');
@@ -812,6 +984,40 @@ async function runSmoke3dTest() {
         return true;
       })()
     `);
+    // 9a. Battle board: the ch5 boss fight plays with PEOPLE as pieces
+    await js(`document.getElementById('result-modal')?.classList.remove('open'); true`); // clear the prior win modal so the field is visible
+    await js(`Story3D.Match.begin(storyActiveFight)`);
+    await pause(2200); // entrance sweep
+    const battle = await js(`
+      JSON.stringify({
+        battle: Story3D.Match._state.battle,
+        pieces: Story3D.Match._state.pieces.flat().filter(Boolean).length,
+        tris: Story3D.renderer.info.render.triangles,
+      })
+    `);
+    const bt = JSON.parse(battle);
+    log('battle board', bt.battle === true && bt.pieces >= 20 && bt.tris > 5000,
+      `battle=${bt.battle}, ${bt.pieces} characters on the field, ${bt.tris} triangles`);
+    await shot('battle');
+    // Horses-outside-only: the clearing battle is outdoor, so its knights ride;
+    // indoor scenes report indoor=true so their knights stay on foot.
+    const envFlags = JSON.parse(await js(`JSON.stringify({
+      field: !!Story3D.Environments.build('clearing_ch5').indoor,
+      hall:  !!Story3D.Environments.build('palace_great_hall').indoor,
+      camp:  !!Story3D.Environments.build('army_camp_night').indoor,
+      throne:!!Story3D.Environments.build('valdris_throne_room').indoor,
+    })`));
+    const mountedKnights = await js(`Story3D.Match._state.pieces.flat().filter(p => p && p.userData.figureKind === 'knight' && p.children.some(ch => ch.children.length > 6)).length`);
+    log('horses outside only', envFlags.field === false && envFlags.hall === true && envFlags.throne === true && mountedKnights >= 1,
+      `clearing-mounts=${mountedKnights}, indoor flags hall/throne=${envFlags.hall}/${envFlags.throne}, field=${envFlags.field}`);
+    if (shotDir) {
+      // Low pass over the white back rank — mounted knights, castle rooks, mitres
+      await js(`Story3D.CameraRig.flyTo({ x: 2.5, y: 2.4, z: 9.5 }, { x: 0, y: 0.6, z: 4.5 }, 200); true`);
+      await pause(700);
+      await shot('battle_rank');
+    }
+    await js(`Story3D.Match.end()`);
+
     await js(`showResultModal('win')`);
     await pause(1800); // 1200ms delay before openEndingChoice
     const skin = await js(`storyProgress.bossSkinsEarned.includes('dying-sun')`);
@@ -833,11 +1039,18 @@ async function runSmoke3dTest() {
     const geo1 = await js(`Story3D.renderer.info.memory.geometries`);
     log('dispose stability', Math.abs(geo1 - geo0) < 40, `geometries ${geo0} → ${geo1} across a full hub cycle`);
 
-    // 11. Clean exit back to the menu
+    // 11. Clean exit back to the menu — story mode off, the 3D menu scene
+    // takes the backdrop (Story3D stays active in 'menu' mode by design)
     await js(`openMainMenu()`);
-    await pause(400);
-    const exited = await js(`Story3D.active === false && document.getElementById('main-menu')?.classList.contains('open')`);
-    log('exit 3D', exited === true, exited ? '3D torn down, menu restored' : 'teardown incomplete');
+    await pause(600);
+    const exited = await js(`
+      Story3D.flagOn === false && Story3D.mode === 'menu' &&
+      document.getElementById('main-menu')?.classList.contains('open') === true &&
+      document.body.classList.contains('story3d-menu') &&
+      !document.querySelector('.mm-card[data-mode="story"]')
+    `);
+    log('exit 3D', exited === true, exited ? 'story mode off, 3D menu live, 2D story card retired' : 'menu handoff incomplete');
+    await shot('menu3d');
 
     // 12. Restore the user's story state (flush immediately — a debounced
     // save can race app.quit() and persist mid-harness state, which makes

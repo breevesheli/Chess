@@ -17,7 +17,7 @@
   const T = () => NS.Textures;
   const _cache = new Map();
 
-  const BUMP = { stone: 0.22, plaster: 0.08, wood: 0.1, fabric: 0.05, metal: 0.04, ground: 0.18, checker: 0.05 };
+  const BUMP = { stone: 0.22, plaster: 0.08, wood: 0.1, fabric: 0.02, metal: 0.04, ground: 0.18, checker: 0.05 };
 
   function _mark(m) { m.userData.story3dShared = true; return m; }
 

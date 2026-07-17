@@ -16,8 +16,9 @@
   if (!THREE) return {};
 
   const A = () => NS.Adapter;
-  const SQ = 0.26;                 // square size (m)
-  const PIECE_SCALE = SQ * 1.5;    // built king height is 1.0
+  const SQ_TABLE = 0.26;           // tabletop square size (m)
+  let sq = SQ_TABLE;               // current square size (battles enlarge it)
+let pieceScale = SQ_TABLE * 1.5; // current piece scale
 
   const state = {
     active: false,
@@ -65,47 +66,68 @@
     const env = NS.Environments.build(bgId);
     state.env = env;
     NS.scene.add(env.group);
-    NS.scene.fog = env.fog || null;
-    NS.scene.background = env.sky || null;
+    NS.applyAtmosphere(env);
     state.animators = env.animators.slice();
 
-    // Table + board at the env's board anchor
+    // Boss fights are BATTLES: a life-size board on open ground, your war
+    // party standing as the white pieces, the boss's army as black, the
+    // boss himself the enemy king. Ordinary fights keep the tabletop.
+    state.battle = !!(fight && fight.isBoss);
+    state.chapterId = fight?.chapter?.id || 'ch1';
+    state.bossId = state.battle ? _opponentFigureId(fight) : null;
+    const envMin = Math.min(
+      (env.bounds.maxX - env.bounds.minX), (env.bounds.maxZ - env.bounds.minZ));
+    sq = state.battle ? (envMin > 16 ? 1.1 : 0.85) : SQ_TABLE;
+    pieceScale = state.battle ? sq * 0.88 : sq * 1.5;
+
     const bg = new THREE.Group();
-    bg.position.set(env.boardAnchor.x, 0, env.boardAnchor.z);
-    bg.rotation.y = env.boardAnchor.rotY || 0;
-    const table = NS.Props.boardTable({ style: env.tableStyle, topSize: SQ * 8 + 0.5 });
-    bg.add(table);
-    const topY = table.userData.topY;
-    // Board slab + rim
-    const slab = new THREE.Mesh(NS.Props.BOX(), NS.Materials.get('wood', '#2e2014'));
-    slab.scale.set(SQ * 8 + 0.18, 0.07, SQ * 8 + 0.18);
-    slab.position.y = topY + 0.035;
-    slab.castShadow = true; slab.receiveShadow = true;
-    bg.add(slab);
-    const top = new THREE.Mesh(
-      NS.Props.geo('boardtop', () => new THREE.PlaneGeometry(SQ * 8, SQ * 8)),
-      NS.Materials.boardTop()
-    );
-    top.rotation.x = -Math.PI / 2;
-    top.position.y = topY + 0.071;
-    top.receiveShadow = true;
-    top.userData.isBoardTop = true;
-    bg.add(top);
-    state.boardTop = top;
+    let topY;
+    if (state.battle) {
+      bg.position.set(0, 0, 0); // the field itself
+      topY = -0.069;            // board surface flush with the ground
+      const top = new THREE.Mesh(
+        NS.Props.geo(`boardtop|${sq}`, () => new THREE.PlaneGeometry(sq * 8, sq * 8)),
+        NS.Materials.boardTop()
+      );
+      top.rotation.x = -Math.PI / 2;
+      top.position.y = topY + 0.071;
+      top.receiveShadow = true;
+      bg.add(top);
+      state.boardTop = top;
+    } else {
+      bg.position.set(env.boardAnchor.x, 0, env.boardAnchor.z);
+      bg.rotation.y = env.boardAnchor.rotY || 0;
+      const table = NS.Props.boardTable({ style: env.tableStyle, topSize: sq * 8 + 0.5 });
+      bg.add(table);
+      topY = table.userData.topY;
+      const slab = new THREE.Mesh(NS.Props.BOX(), NS.Materials.get('wood', '#2e2014'));
+      slab.scale.set(sq * 8 + 0.18, 0.07, sq * 8 + 0.18);
+      slab.position.y = topY + 0.035;
+      slab.castShadow = true; slab.receiveShadow = true;
+      bg.add(slab);
+      const top = new THREE.Mesh(
+        NS.Props.geo(`boardtop|${sq}`, () => new THREE.PlaneGeometry(sq * 8, sq * 8)),
+        NS.Materials.boardTop()
+      );
+      top.rotation.x = -Math.PI / 2;
+      top.position.y = topY + 0.071;
+      top.receiveShadow = true;
+      bg.add(top);
+      state.boardTop = top;
+    }
     state.topY = topY + 0.071;
     state.boardGroup = bg;
     NS.scene.add(bg);
 
-    // Two flanking chairs to seat the duel
-    const chairA = NS.Props.chair(); chairA.position.set(env.boardAnchor.x, 0, env.boardAnchor.z + SQ * 8); chairA.rotation.y = Math.PI + (env.boardAnchor.rotY || 0);
-    const chairB = NS.Props.chair(); chairB.position.set(env.boardAnchor.x, 0, env.boardAnchor.z - SQ * 8); chairB.rotation.y = env.boardAnchor.rotY || 0;
-    NS.scene.add(chairA, chairB);
-    // The opponent, standing across the board (white = player = +z side)
-    const opp = NS.Figures.buildById(_opponentFigureId(fight));
-    opp.position.set(env.boardAnchor.x, 0, env.boardAnchor.z - SQ * 8 - 0.45);
-    opp.rotation.y = 0; opp.userData.heading = 0;
-    NS.scene.add(opp);
-    opp.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); });
+    let opp = null;
+    if (!state.battle) {
+      // The opponent stands across the board (no chairs — they'd be unsat).
+      opp = NS.Figures.buildById(_opponentFigureId(fight));
+      opp.position.set(env.boardAnchor.x, 0, env.boardAnchor.z - sq * 8 - 0.45);
+      opp.rotation.y = 0; opp.userData.heading = 0;
+      NS.scene.add(opp);
+      opp.traverse(o => { if (o.userData.animators) state.animators.push(...o.userData.animators); });
+    }
 
     state.highlights = new THREE.Group();
     state.highlights.position.y = state.topY + 0.004;
@@ -115,24 +137,31 @@
     state.untick = NS.onTick(_tick);
     state.active = true;
 
-    const center = new THREE.Vector3(env.boardAnchor.x, state.topY, env.boardAnchor.z);
-    if (fight && fight.isBoss) {
-      // Boss entrance: a slow drift down the hall onto the opponent's face,
-      // a held beat under the title card, then the sweep to the board.
-      const ox = opp.position.x, oz = opp.position.z;
+    const center = new THREE.Vector3(bg.position.x, state.topY, bg.position.z);
+    const matchOpts = state.battle ? { ms: 1600, dist: sq * 8 * 1.15, pitch: 0.95 } : { ms: 1500 };
+    if (state.battle) {
+      // Battle entrance: sweep low across the enemy ranks to the boss-king,
+      // hold under the title card, then rise to the war view.
+      const kw = A().squareToWorld(0, 4, sq); // black king's square (e8)
       NS.CameraRig.jumpTo(
-        { x: ox - 6, y: 5.5, z: oz - 7 },
-        { x: ox, y: 1.4, z: oz }
+        { x: kw.x - sq * 5, y: 2.2, z: kw.z - sq * 6 },
+        { x: kw.x, y: 1.4, z: kw.z }
       );
       NS.HUD.showTitleCard(fight.fight.name.toUpperCase(), `CHAPTER ${fight.chapter?.num || ''}`.trim());
       NS.CameraRig.flyTo(
-        { x: ox + 0.6, y: 1.8, z: oz + 2.4 },
-        { x: ox, y: 1.45, z: oz },
-        2400,
-        () => setTimeout(() => NS.CameraRig.setMatch(center, { ms: 1600 }), 700)
+        { x: kw.x + sq * 1.2, y: 1.9, z: kw.z + sq * 2.6 },
+        { x: kw.x, y: 1.5, z: kw.z },
+        2600,
+        () => setTimeout(() => NS.CameraRig.setMatch(center, matchOpts), 800)
       );
+    } else if (fight && fight.isBoss && opp) {
+      const ox = opp.position.x, oz = opp.position.z;
+      NS.CameraRig.jumpTo({ x: ox - 6, y: 5.5, z: oz - 7 }, { x: ox, y: 1.4, z: oz });
+      NS.HUD.showTitleCard(fight.fight.name.toUpperCase(), `CHAPTER ${fight.chapter?.num || ''}`.trim());
+      NS.CameraRig.flyTo({ x: ox + 0.6, y: 1.8, z: oz + 2.4 }, { x: ox, y: 1.45, z: oz }, 2400,
+        () => setTimeout(() => NS.CameraRig.setMatch(center, matchOpts), 700));
     } else {
-      NS.CameraRig.setMatch(center, { ms: 1500 });
+      NS.CameraRig.setMatch(center, matchOpts);
     }
     NS.HUD.setLocation('');
     NS.HUD.showMatchHud();
@@ -161,22 +190,44 @@
     state.selected = null;
     state.legal = [];
     state.animators = [];
+    state.battle = false;
+    sq = SQ_TABLE;
+    pieceScale = SQ_TABLE * 1.5;
     document.body.classList.remove('story3d-match');
     NS.HUD.hideMatchHud();
     // Scene content is cleared by whoever shows the next stage.
   }
 
   // ── Mirror construction / resync ─────────────────────────────────────
+  const _ordinals = {};
   function _placePiece(letter, r, c) {
     const type = A().pieceType(letter);
     const color = A().pieceColor(letter);
-    const variant = type === 'king' ? A().kingSkinVariant(_equipped(), color) : null;
-    // Piece armor: the player's blanket cosmetics dress the white army only.
-    const armor = color === 'white' && NS.Inventory ? NS.Inventory.pieceArmorFor(type) : null;
-    const p = NS.Pieces.build(type, color, { variant, armor });
-    p.scale.setScalar(PIECE_SCALE);
-    const w = A().squareToWorld(r, c, SQ);
+    let p;
+    if (state.battle) {
+      // People as pieces: the war party in white, the boss's army in black.
+      const ord = _ordinals[letter] = (_ordinals[letter] || 0);
+      _ordinals[letter]++;
+      const who = NS.Content.battleFigureFor(letter, state.chapterId, ord, state.bossId);
+      // Knights ride into battle on horseback — but only outdoors. Indoor
+      // boards (throne room, halls) keep them free-standing on foot.
+      const mounted = type === 'knight' && state.env && !state.env.indoor;
+      p = who.id
+        ? NS.Figures.buildById(who.id, { chapterId: state.chapterId, mounted })
+        : NS.Figures.build(who.def, { faction: who.faction, chapterId: state.chapterId, mounted });
+      p.scale.multiplyScalar(pieceScale);
+      p.rotation.y = color === 'white' ? Math.PI : 0; // armies face each other
+      p.userData.heading = p.rotation.y;
+    } else {
+      const variant = type === 'king' ? A().kingSkinVariant(_equipped(), color) : null;
+      // Piece armor: the player's blanket cosmetics dress the white army only.
+      const armor = color === 'white' && NS.Inventory ? NS.Inventory.pieceArmorFor(type) : null;
+      p = NS.Pieces.build(type, color, { variant, armor });
+      p.scale.setScalar(pieceScale);
+    }
+    const w = A().squareToWorld(r, c, sq);
     p.position.set(w.x, state.topY, w.z);
+    p.userData.groundY = state.topY;
     state.boardGroup.add(p);
     if (p.userData.animators) state.animators.push(...p.userData.animators);
     return p;
@@ -186,6 +237,7 @@
     const b = board();
     if (!b || !state.boardGroup) return;
     // Clear existing
+    Object.keys(_ordinals).forEach(k => delete _ordinals[k]);
     state.pieces.flat?.().forEach(p => p && NS.disposeGroup(p));
     state.pieces = Array.from({ length: 8 }, () => Array(8).fill(null));
     state.model = Array.from({ length: 8 }, (_, r) => Array.from({ length: 8 }, (_, c) => b[r][c] || null));
@@ -213,8 +265,8 @@
     state.animating++;
     _clearHighlights();
     const dur = 450;
-    const fromW = A().squareToWorld(mv.fr, mv.fc, SQ);
-    const toW = A().squareToWorld(mv.tr, mv.tc, SQ);
+    const fromW = A().squareToWorld(mv.fr, mv.fc, sq);
+    const toW = A().squareToWorld(mv.tr, mv.tc, sq);
     const piece = state.pieces[mv.fr][mv.fc];
     // Capture first: topple + dissolve
     if (mv.captured && mv.capturedAt) {
@@ -230,11 +282,13 @@
     state.pieces[mv.tr][mv.tc] = piece;
     if (piece) {
       const isKnight = A().pieceType(mv.piece) === 'knight';
+      piece.userData.setWalking?.(true);
       NS.tween(dur, k => {
         piece.position.x = fromW.x + (toW.x - fromW.x) * k;
         piece.position.z = fromW.z + (toW.z - fromW.z) * k;
-        piece.position.y = state.topY + (isKnight ? Math.sin(k * Math.PI) * 0.22 : Math.sin(k * Math.PI) * 0.04);
+        if (!state.battle) piece.position.y = state.topY + (isKnight ? Math.sin(k * Math.PI) * 0.22 : Math.sin(k * Math.PI) * 0.04);
       }, () => {
+        piece.userData.setWalking?.(false);
         piece.position.set(toW.x, state.topY, toW.z);
         // Promotion: swap mesh for the promoted piece
         if (mv.promoPiece) {
@@ -251,8 +305,8 @@
     // Castling: the rook glides alongside
     if (mv.rookMove) {
       const rk = state.pieces[mv.rookMove.fr][mv.rookMove.fc];
-      const rFrom = A().squareToWorld(mv.rookMove.fr, mv.rookMove.fc, SQ);
-      const rTo = A().squareToWorld(mv.rookMove.tr, mv.rookMove.tc, SQ);
+      const rFrom = A().squareToWorld(mv.rookMove.fr, mv.rookMove.fc, sq);
+      const rTo = A().squareToWorld(mv.rookMove.tr, mv.rookMove.tc, sq);
       state.pieces[mv.rookMove.fr][mv.rookMove.fc] = null;
       state.pieces[mv.rookMove.tr][mv.rookMove.tc] = rk;
       state.model[mv.rookMove.fr][mv.rookMove.fc] = null;
@@ -266,6 +320,7 @@
 
   function _topple(victim, dir) {
     const axis = (Math.random() - 0.5) * 0.8;
+    const s0 = victim.scale.x;
     NS.tween(420, k => {
       victim.rotation.z = dir * k * (Math.PI / 2 - 0.12);
       victim.rotation.x = axis * k;
@@ -274,7 +329,7 @@
       // dissolve: sink + scale out
       NS.tween(500, k => {
         victim.position.y = state.topY - k * 0.22;
-        victim.scale.setScalar(PIECE_SCALE * (1 - k * 0.85));
+        victim.scale.setScalar(s0 * (1 - k * 0.85));
       }, () => NS.disposeGroup(victim));
     });
   }
@@ -295,7 +350,7 @@
     const b = board();
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
       if (b[r][c] === letter) {
-        const w = A().squareToWorld(r, c, SQ);
+        const w = A().squareToWorld(r, c, sq);
         const l = new THREE.PointLight(0xff2a18, 1.6, 2.6, 2);
         const wp = new THREE.Vector3(w.x, state.topY + 0.6, w.z);
         state.boardGroup.localToWorld(wp);
@@ -365,7 +420,7 @@
     const hits = _ray.intersectObject(state.boardTop, false);
     if (!hits.length) return null;
     const local = state.boardGroup.worldToLocal(hits[0].point.clone());
-    return A().worldToSquare(local.x, local.z, SQ);
+    return A().worldToSquare(local.x, local.z, sq);
   }
 
   function _select(sq) {
@@ -383,14 +438,14 @@
   }
 
   function _showHighlights(sel, legal) {
-    const ringG = NS.Props.geo('hl-ring', () => new THREE.RingGeometry(SQ * 0.34, SQ * 0.46, 24));
-    const dotG = NS.Props.geo('hl-dot', () => new THREE.CircleGeometry(SQ * 0.16, 18));
+    const ringG = NS.Props.geo(`hl-ring|${sq}`, () => new THREE.RingGeometry(sq * 0.34, sq * 0.46, 24));
+    const dotG = NS.Props.geo(`hl-dot|${sq}`, () => new THREE.CircleGeometry(sq * 0.16, 18));
     const selM = NS.Materials.glow('#ffcc00', 1);
     const dotM = NS.Materials.glow('#ffe680', 0.85);
     const capM = NS.Materials.glow('#ff7040', 0.95);
     const place = (geo, mat, r, c) => {
       const m = new THREE.Mesh(geo, mat);
-      const w = A().squareToWorld(r, c, SQ);
+      const w = A().squareToWorld(r, c, sq);
       m.rotation.x = -Math.PI / 2;
       m.position.set(w.x, 0, w.z);
       m.castShadow = false;
@@ -426,6 +481,6 @@
     begin, end, rebuildFromBoard, resyncFromBoard, onGameEnd, getPieceAt,
     resyncPieceArmor,
     animateMove,
-    SQ, _state: state,
+    SQ_TABLE, _state: state,
   };
 });

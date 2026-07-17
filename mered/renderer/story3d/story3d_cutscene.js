@@ -105,12 +105,11 @@
     const env = NS.Environments.build(bgId);
     state.env = env;
     NS.scene.add(env.group);
-    NS.scene.fog = env.fog || null;
-    NS.scene.background = env.sky || null;
+    NS.applyAtmosphere(env);
     state.animators = env.animators.slice();
     // Re-place any existing actors onto the new stage (swapbg)
     Object.values(state.actors).forEach(a => {
-      const w = A().stageToWorld(a.nx, a.ny, env.stage);
+      const w = _resolve(A().stageToWorld(a.nx, a.ny, env.stage));
       a.figure.position.set(w.x, 0, w.z);
       NS.scene.add(a.figure);
     });
@@ -137,6 +136,24 @@
   // ── Actors ───────────────────────────────────────────────────────────
   function _actor(id) { return state.actors[id] || null; }
 
+  /** Push a stage position out of the environment's solid props (tables,
+   *  hearths, wells…) so nobody ever stands inside the furniture. */
+  function _resolve(w) {
+    const R = 0.5;
+    for (let pass = 0; pass < 2; pass++) {
+      for (const b of (state.env.colliders || [])) {
+        const dx = w.x - b.x, dz = w.z - b.z;
+        const ox = b.hw + R - Math.abs(dx);
+        const oz = b.hd + R - Math.abs(dz);
+        if (ox > 0 && oz > 0) {
+          if (ox < oz) w.x += (dx >= 0 ? ox : -ox);
+          else w.z += (dz >= 0 ? oz : -oz);
+        }
+      }
+    }
+    return w;
+  }
+
   function _placeActor(id, nx, ny) {
     let a = state.actors[id];
     if (!a) {
@@ -146,7 +163,7 @@
       a = state.actors[id] = { figure, nx, ny };
     }
     a.nx = nx; a.ny = ny;
-    const w = A().stageToWorld(nx, ny, state.env.stage);
+    const w = _resolve(A().stageToWorld(nx, ny, state.env.stage));
     a.figure.position.set(w.x, 0, w.z);
     _faceCentre(a);
     return a;
@@ -228,6 +245,11 @@
     const choices = document.getElementById('cs-choices');
     const nextBtn = document.getElementById('cs-next');
     if (choices) { choices.innerHTML = ''; choices.style.display = 'none'; }
+    // Disarm NEXT on every step entry. Timed steps (move/fade/swapbg…) never
+    // touched it, so after a say it stayed visible with a stale handler — a
+    // second click there spawned a concurrent step chain that could consume
+    // the scene twice and kill the live typewriter mid-line.
+    if (nextBtn) { nextBtn.style.display = 'none'; nextBtn.onclick = null; }
 
     switch (step.type) {
       case 'place': {
@@ -240,7 +262,7 @@
         const a = _actor(step.id);
         if (a) {
           a.nx = step.x; a.ny = step.y;
-          const to = A().stageToWorld(step.x, step.y, state.env.stage);
+          const to = _resolve(A().stageToWorld(step.x, step.y, state.env.stage));
           const from = a.figure.position.clone();
           a.figure.userData.setWalking?.(true);
           const dir = Math.atan2(to.x - from.x, to.z - from.z);
@@ -257,7 +279,7 @@
         const a = _actor(step.id);
         if (a) {
           a.nx += step.dx; a.ny += step.dy;
-          const to = A().stageToWorld(a.nx, a.ny, state.env.stage);
+          const to = _resolve(A().stageToWorld(a.nx, a.ny, state.env.stage));
           const from = a.figure.position.clone();
           NS.tween(280, k => {
             a.figure.position.x = from.x + (to.x - from.x) * k;
@@ -363,7 +385,11 @@
           if (!state.running) return;
           if (i >= full.length) {
             nextBtn.style.display = '';
-            nextBtn.onclick = () => { _next(); };
+            nextBtn.onclick = () => {
+              nextBtn.style.display = 'none';
+              nextBtn.onclick = null; // one advance per line, ever
+              _next();
+            };
             return;
           }
           txt.textContent += full[i++];

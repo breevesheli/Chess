@@ -1,15 +1,41 @@
-# ── Run the game ─────────────────────────────────────────────────────
-cd "C:\Users\breeves\Desktop\VS Code\Chess Popup\mered"
+# -- Run the game ------------------------------------------------------
+cd "C:\Users\breeves\Desktop\VS Code\Chess-main-main\mered"
 npm start
 
 # First time on a new machine: install dependencies first
 #   npm install
 
-# ── Checks ───────────────────────────────────────────────────────────
+# -- Checks -------------------------------------------------------------
 npm test           # unit tests
 npm run smoke      # 2D game harness
 npm run smoke3d    # 3D story mode harness
 
-# ── Build a distributable ────────────────────────────────────────────
+# -- Build a distributable ----------------------------------------------
 npm run pack       # unpacked build into dist/
 npm run dist:win   # Windows installer
+
+# -- 3D Story controls --------------------------------------------------
+#   WASD / Arrows   Walk around the hub
+#   Mouse drag      Look around (camera springs back when released)
+#   Mouse wheel     Zoom in / out
+#   E               Interact — talk, fight, shop, or use the signpost
+#   M               Open the World Map (travel between chapters)
+#   Tab             Open the Inventory (Items / Equipment tabs)
+#   P               Photo mode (hide the HUD)
+#   `  (backtick)   Open the cheat console (see below)
+#   Gear icon       Settings — turn speed, etc. (top-left of the screen)
+
+# -- 3D Story cheat codes ----------------------------------------------
+# Press the backtick key ( ` , above Tab) in-game to open the console,
+# type a code, and press Enter. Most require you to be inside 3D Story
+# mode first (start a story, then open the console).
+#
+#   s3dhelp         List every cheat code on screen
+#   gotoch1         Jump to the Chapter 1 hub (also gotoch2 … gotoch5)
+#   gotoch5         Jump to a chapter and unlock everything up to it
+#   crownme         Crown the player king now (skips the Ch.1 boss gate)
+#   armoryall       Grant every armor piece — then press Tab to equip
+#   battletest      Jump straight into the Chapter 5 boss battle board
+#   replayprologue  Reset the opening + arrival cutscenes so they replay
+#   endingkill      Trigger the "kill Saoirse" ending
+#   endingspare     Trigger the "spare Saoirse" ending

@@ -27,7 +27,11 @@
   // fight-id / name → figure id (cast table in story3d_figures / CS_SILHOUETTES)
   const FIGURE_BY_FIGHT = {
     'ch1-f0': 'cavan',
+    'ch1-f1': 'nobleman',      // Lord Caeven — old court, not a soldier
+    'ch1-f2': 'noblewoman',    // Lady Mourne — she never blinks
+    'ch1-f3': 'councilor',     // the Council of Three's spokesman
     'ch1-boss': 'aldwyn',
+    'ch2-f2': 'drave',         // Lord Drave, the profiteer
     'ch2-boss': 'brenna',
     'ch2-sq-archivist': 'archivist',
     'ch2-npc-pip': 'civilian',

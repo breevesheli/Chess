@@ -28,9 +28,27 @@
     },
   };
 
+  // Surface async failures: cutscene/tween steps run inside promise chains,
+  // and an unhandled rejection there stalls the flow with no console output
+  // (Electron's console-message hook never sees rejections). Log both so the
+  // smoke harness and the cheat console can show the real error.
+  if (typeof window !== 'undefined') {
+    window.addEventListener('unhandledrejection', (e) => {
+      const r = e.reason;
+      console.error('[Story3D] unhandled rejection:', (r && r.stack) || r);
+    });
+    window.addEventListener('error', (e) => {
+      console.error('[Story3D] uncaught:', e.message, e.filename + ':' + e.lineno);
+    });
+  }
+
   const NS = {
     version: 1,
     active: false,          // true while 3D story mode owns the screen
+    // Player-tunable settings (persisted in localStorage via the HUD panel)
+    settings: {
+      sensitivity: (typeof localStorage !== 'undefined' && parseFloat(localStorage.getItem('s3d-sensitivity'))) || 1,
+    },
     bus,
     renderer: null,
     scene: null,
@@ -99,11 +117,15 @@
 
   function start() {
     init();
-    if (NS.active) return;
-    NS.active = true;
+    // Always reapply canvas state — callers (the menu scene in particular)
+    // temporarily lower the z-index or disable the pointer, and start() is
+    // the reset point even when the loop is already running.
     NS.canvas.style.display = 'block';
     NS.canvas.style.pointerEvents = 'auto';
+    NS.canvas.style.zIndex = '240';
     document.body.classList.add('story3d-active');
+    if (NS.active) return;
+    NS.active = true;
     NS.clock.start();
     if (!_rafId) _rafId = requestAnimationFrame(_frame);
     bus.emit('start');
@@ -161,6 +183,48 @@
     [...NS.scene.children].forEach(child => disposeGroup(child));
     NS.scene.fog = null;
     NS.scene.background = null;
+    // environment (IBL) is cached + reassigned by applyAtmosphere, never freed
+  }
+
+  // ── Image-based lighting ──────────────────────────────────────────────
+  // A prefiltered environment map gives metal real reflections and a soft,
+  // grounded ambient term — the single biggest lift in perceived quality.
+  // Built procedurally from each scene's own sky + ground colours (cached per
+  // palette) so dark scenes stay moody and bright halls glow. PMREMGenerator
+  // is core three.js, so this needs no add-ons and works on the UMD build.
+  let _pmrem = null;
+  const _envCache = new Map();
+  function _envMap(skyColor, groundColor) {
+    if (!NS.renderer || !skyColor || typeof document === 'undefined') return null;
+    const grd = groundColor || skyColor;
+    const key = skyColor.getHexString() + '|' + grd.getHexString();
+    if (_envCache.has(key)) return _envCache.get(key);
+    if (!_pmrem) { _pmrem = new THREE.PMREMGenerator(NS.renderer); _pmrem.compileEquirectangularShader(); }
+    // vertical sky-dome gradient: bright zenith → sky → horizon haze → ground
+    const cv = document.createElement('canvas'); cv.width = 8; cv.height = 256;
+    const g = cv.getContext('2d');
+    const grad = g.createLinearGradient(0, 0, 0, 256);
+    const hex = (c) => '#' + c.getHexString();
+    grad.addColorStop(0.0, hex(skyColor.clone().lerp(new THREE.Color('#ffffff'), 0.4)));
+    grad.addColorStop(0.44, hex(skyColor));
+    grad.addColorStop(0.52, hex(skyColor.clone().lerp(grd, 0.55)));
+    grad.addColorStop(1.0, hex(grd.clone().lerp(new THREE.Color('#000000'), 0.15)));
+    g.fillStyle = grad; g.fillRect(0, 0, 8, 256);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    const env = _pmrem.fromEquirectangular(tex).texture;
+    tex.dispose();
+    env.userData.story3dShared = true;
+    _envCache.set(key, env);
+    return env;
+  }
+
+  // Apply a built environment's sky, fog, and IBL to the live scene in one call.
+  function applyAtmosphere(env) {
+    if (!NS.scene || !env) return;
+    NS.scene.fog = env.fog || null;
+    NS.scene.background = env.sky || null;
+    NS.scene.environment = _envMap(env.sky, env.envGround) || NS.scene.environment;
   }
 
   // Eased tween helper used by camera/board/cutscene animation.
@@ -188,7 +252,7 @@
 
   Object.assign(NS, {
     init, start, stop, onTick, setCamera, getCamera,
-    markShared, disposeGroup, clearScene, tween,
+    markShared, disposeGroup, clearScene, applyAtmosphere, tween,
   });
   return NS;
 });

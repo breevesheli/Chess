@@ -628,6 +628,30 @@
     return g;
   }
 
+  /** Windmill: stone tower, pitched cap, four cloth sails that turn. */
+  function windmill(opts) {
+    opts = opts || {};
+    const g = new THREE.Group();
+    const h = opts.h || 5;
+    g.add(mesh(geo('mill-tower', () => new THREE.CylinderGeometry(0.9, 1.25, 1, 10)), M().get('stone', '#6a6052'), 1, h, 1, 0, h / 2, 0));
+    g.add(mesh(CONE(), M().get('wood', '#33261a'), 2.4, 1.2, 2.4, 0, h + 0.55, 0));
+    const hubG = new THREE.Group();
+    hubG.position.set(0, h - 0.4, 1.05);
+    g.add(hubG);
+    hubG.add(mesh(CYL(), M().get('wood', '#3a2a18'), 0.14, 0.5, 0.14, 0, 0, -0.2));
+    const sailCloth = M().get('fabric', '#d8cdb6', { seed: 143 });
+    for (let i = 0; i < 4; i++) {
+      const arm = new THREE.Group();
+      arm.rotation.z = (i / 4) * Math.PI * 2;
+      const sail = mesh(BOX(), sailCloth, 0.55, 2.4, 0.04, 0, 1.45, 0);
+      const spar = mesh(BOX(), M().get('wood', '#3a2a18'), 0.08, 2.8, 0.08, 0, 1.4, -0.04);
+      arm.add(sail, spar);
+      hubG.add(arm);
+    }
+    addAnim(g, [(t) => { hubG.rotation.z = t * 0.45; }]);
+    return g;
+  }
+
   /** Scatter pebbles + grass tufts inside a rect, keeping a clear centre. */
   function scatter(opts) {
     opts = opts || {};
@@ -667,6 +691,6 @@
     geo, mesh, BOX, CYL, TCYL, CONE, SPHERE, PLANE,
     torch, campfire, candle, banner, arch, stainedWindow, throne, column, rug,
     boardTable, chair, crate, barrel, tent, stall, tree, deadTree, rock,
-    lanternPost, flag, fence, building, scatter,
+    lanternPost, flag, fence, building, scatter, windmill,
   };
 });

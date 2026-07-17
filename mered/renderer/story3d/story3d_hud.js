@@ -30,6 +30,24 @@
     #bg-overlay.story3d-transparent #bg-silhouette-layer { display: none; }
     /* Hide the 2D game chrome while a 3D match is on screen */
     body.story3d-match #main, body.story3d-match #topbar { visibility: hidden; }
+    /* 3D main menu: the menu DOM floats over the live scene (canvas z 170) */
+    body.story3d-menu #main-menu { background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(4,3,2,0.6) 100%); }
+    body.story3d-menu #mm-scene, body.story3d-menu #mm-rays { display: none; }
+    body.story3d-menu #mm-vignette { background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%); }
+    body.story3d-menu .mm-card { background: rgba(16,13,9,0.82); backdrop-filter: blur(2px); }
+    /* Difficulty select: dark-gold over the live hall instead of the
+       painted wall scene (its #ds-scene canvas is hidden in 3D) */
+    body.story3d-menu #difficulty-select { background: radial-gradient(ellipse at center, rgba(8,6,4,0.45) 30%, rgba(4,3,2,0.85) 100%) !important; }
+    body.story3d-menu #ds-scene, body.story3d-menu #ds-vignette { display: none !important; }
+    body.story3d-menu #ds-title { color: #e8d8a8 !important; font-family: Cinzel, serif !important; letter-spacing: 6px; text-shadow: 0 2px 18px rgba(0,0,0,0.9), 0 0 30px rgba(200,168,75,0.3); }
+    body.story3d-menu #ds-sub { color: #8a8270 !important; letter-spacing: 2px; }
+    body.story3d-menu .ds-card { background: rgba(22,19,13,0.92) !important; border: 1px solid #3a3424 !important; color: #e0d6b8 !important; border-radius: 8px !important; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+    body.story3d-menu .ds-card h3 { color: #c8a84b !important; font-family: Cinzel, serif !important; }
+    body.story3d-menu .ds-card .lives { color: #ffd24a !important; }
+    body.story3d-menu .ds-card .desc { color: #8a8270 !important; }
+    body.story3d-menu .ds-card.active { border-color: #ffcc00 !important; box-shadow: 0 0 24px rgba(255,204,0,0.25) !important; }
+    body.story3d-menu .ds-card.ironclad.active { border-color: #ff5a3c !important; }
+    body.story3d-menu #ds-confirm { background: #2a2316 !important; color: #e8d8a8 !important; border: 1px solid #c8a84b !important; font-family: Cinzel, serif !important; letter-spacing: 2px; }
 
     /* ── HUD elements ─────────────────────────────────────────────── */
     #s3d-location { position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
@@ -256,6 +274,74 @@
     document.getElementById('s3d-travel')?.classList.remove('open');
   }
 
+  // ── Settings (gear button, look sensitivity) ─────────────────────────
+  function _ensureSettingsDom() {
+    if (document.getElementById('s3d-gear')) return;
+    const css = document.createElement('style');
+    css.textContent = `
+      #s3d-gear { position: fixed; top: 14px; left: 14px; z-index: 247; display: none;
+        width: 34px; height: 34px; border-radius: 6px; cursor: pointer; font-size: 17px;
+        background: rgba(14,12,8,0.75); border: 1px solid #3a3424; color: #c8a84b; }
+      #s3d-gear:hover { border-color: #c8a84b; }
+      body.story3d-active #s3d-gear, body.story3d-menu #s3d-gear { display: block; }
+      body.s3d-photo #s3d-gear { display: none !important; }
+      #s3d-settings { position: fixed; inset: 0; z-index: 880; display: none;
+        background: rgba(4,4,6,0.72); align-items: center; justify-content: center; }
+      #s3d-settings.open { display: flex; }
+      #s3d-settings .panel { background: #16130d; border: 1px solid #3a3424; border-radius: 8px;
+        width: 420px; padding: 24px 28px; color: #e0d6b8; }
+      #s3d-settings h3 { margin: 0 0 14px; font: 22px 'Cinzel', serif; color: #c8a84b; letter-spacing: 2px; }
+      #s3d-settings label { font: 13px Inter, sans-serif; color: #b0a890; display: block; margin-bottom: 6px; }
+      #s3d-settings input[type=range] { width: 100%; accent-color: #c8a84b; }
+      #s3d-settings .val { float: right; color: #ffd24a; }
+      #s3d-settings .close { margin-top: 16px; width: 100%; background: #2a2316; color: #e8d8a8;
+        border: 1px solid #c8a84b55; border-radius: 4px; padding: 9px; cursor: pointer;
+        font: 13px 'Cinzel', serif; letter-spacing: 2px; }
+    `;
+    document.head.appendChild(css);
+    const gear = document.createElement('button');
+    gear.id = 's3d-gear';
+    gear.title = 'Settings';
+    gear.innerHTML = '&#9881;';
+    gear.onclick = openSettings;
+    document.body.appendChild(gear);
+    const panel = document.createElement('div');
+    panel.id = 's3d-settings';
+    panel.innerHTML = `<div class="panel">
+      <h3>SETTINGS</h3>
+      <label>Turn speed <span class="val" id="s3d-sens-val"></span></label>
+      <input type="range" id="s3d-sens" min="20" max="200" step="10">
+      <button class="close" id="s3d-settings-close">DONE</button>
+    </div>`;
+    panel.addEventListener('click', e => { if (e.target === panel) closeSettings(); });
+    document.body.appendChild(panel);
+    panel.querySelector('#s3d-settings-close').onclick = closeSettings;
+    const slider = panel.querySelector('#s3d-sens');
+    slider.oninput = () => {
+      const v = parseInt(slider.value, 10) / 100;
+      NS.settings.sensitivity = v;
+      try { localStorage.setItem('s3d-sensitivity', String(v)); } catch (e) {}
+      document.getElementById('s3d-sens-val').textContent = v.toFixed(1) + 'x';
+    };
+  }
+  function openSettings() {
+    _build();
+    _ensureSettingsDom();
+    const v = NS.settings.sensitivity || 1;
+    const slider = document.getElementById('s3d-sens');
+    slider.value = String(Math.round(v * 100));
+    document.getElementById('s3d-sens-val').textContent = v.toFixed(1) + 'x';
+    document.getElementById('s3d-settings').classList.add('open');
+  }
+  function closeSettings() {
+    document.getElementById('s3d-settings')?.classList.remove('open');
+  }
+  if (typeof window !== 'undefined') {
+    // Build the stylesheet + settings gear up front — the menu and the
+    // difficulty screen need the scoped overrides before any HUD call.
+    window.addEventListener('load', () => setTimeout(() => { _build(); _ensureSettingsDom(); }, 400));
+  }
+
   // ── Photo mode: P hides every HUD layer for a clean screenshot ───────
   (function bindPhotoMode() {
     if (typeof window === 'undefined') return;
@@ -276,5 +362,6 @@
     setLocation, showPrompt, hidePrompt, showControlsHint, hideAll,
     showMatchHud, hideMatchHud, openTravelPanel, closeTravelPanel,
     showMapDifficulty, hideMapDifficulty, showTitleCard,
+    openSettings, closeSettings,
   };
 });
